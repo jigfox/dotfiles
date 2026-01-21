@@ -1,0 +1,11 @@
+packages:
+  darwin:
+    brews:
+      - git
+      - sshpass
+      - openconnect
+      - chezmoi
+      - mise
+      - fish
+    casks:
+      - kitty

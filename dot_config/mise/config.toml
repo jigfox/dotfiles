@@ -1,0 +1,17 @@
+[settings]
+experimental = true
+
+[tools]
+age = "latest"
+eza = "latest"
+fd = "latest"
+fnox = "latest"
+fzf = "latest"
+jq = "latest"
+lazygit = "latest"
+neovim = "latest"
+nodejs = "lts"
+ripgrep = "latest"
+starship = "latest"
+yq = "latest"
+zoxide = "latest"
