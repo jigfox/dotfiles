@@ -1,0 +1,20 @@
+{{- if (eq .chezmoi.os "darwin") -}}
+#!/bin/bash
+
+# Check if Homebrew is installed
+if ! command -v brew &> /dev/null; then
+    echo "Homebrew not found. Installing..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+    # Attempt to load Homebrew immediately so it can be used by other scripts
+    # Standard Linux/Intel Mac path
+    if [ -f "/usr/local/bin/brew" ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    # Apple Silicon path
+    elif [ -f "/opt/homebrew/bin/brew" ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    fi
+else
+    echo "Homebrew already installed. Skipping."
+fi
+{{ end -}}
