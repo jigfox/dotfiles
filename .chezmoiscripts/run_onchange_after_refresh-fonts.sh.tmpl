@@ -1,0 +1,14 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Dependency: Monitor all encrypted font files
+# We loop over them and include their SHA256 hashes.
+# If any hash changes (or a file is added/removed), this script will update and run.
+{{ range glob (joinPath .chezmoi.sourceDir "Library/Fonts/encrypted_*.otf.age") -}}
+# Hash: {{ include . | sha256sum }}
+{{ end -}}
+
+echo "Fonts updated. Refreshing cache..."
+atsutil databases -removeUser
+
+{{- end -}}

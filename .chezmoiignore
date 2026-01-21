@@ -1,0 +1,4 @@
+# Ignore the Mac library folder on Linux
+{{ if ne .chezmoi.os "darwin" }}
+Library
+{{ end }}
