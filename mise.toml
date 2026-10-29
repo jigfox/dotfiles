@@ -4,7 +4,3 @@ AGE_EDIT_ID = "~/.config/age/keys.txt"
 [tasks.default]
 alias = "apply"
 run = "chezmoi apply"
-
-[tasks."nono:save"]
-description = "Encrypt ~/.config/nono/profiles back into the source repo"
-run = "scripts/nono-sync.sh save"

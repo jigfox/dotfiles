@@ -1,0 +1,60 @@
+{{- $w := include "secrets/work.yaml.age" | decrypt | fromYaml -}}
+{
+  "extends": "default",
+  "meta": {
+    "name": "{{ index $w.nono.profiles "work-claude-core" }}",
+    "version": "1.0.0",
+    "description": "claude-code pack profile minus the ~/.claude, ~/.claude.json* and profile-drafts grants (CLAUDE_CONFIG_DIR lives in the workdir)"
+  },
+  "groups": {
+    "include": [
+      { "name": "claude_code_macos", "when": "macos" },
+      { "name": "user_caches_macos", "when": "macos" },
+      "node_runtime",
+      "rust_runtime",
+      "python_runtime",
+      { "name": "vscode_macos", "when": "macos" },
+      "nix_runtime",
+      "git_config",
+      "unlink_protection"
+    ]
+  },
+  "security": {
+    "signal_mode": "isolated",
+    "capability_elevation": false
+  },
+  "filesystem": {
+    "allow": [
+      "$HOME/.local/state/claude/locks",
+      "$HOME/.cache/claude",
+      "/tmp/claude-$UID",
+      { "path": "$HOME/Library/Keychains", "when": "macos" }
+    ],
+    "read": [
+      "$NONO_PACKAGES",
+      "$NONO_CONFIG/profiles"
+    ],
+    "bypass_protection": [
+      { "path": "$HOME/Library/Keychains", "when": "macos" }
+    ]
+  },
+  "network": { "block": false },
+  "workdir": { "access": "readwrite" },
+  "open_urls": {
+    "allow_origins": [
+      "https://claude.ai",
+      "https://claude.com",
+      "https://api.anthropic.com",
+      "https://platform.claude.com"
+    ],
+    "allow_localhost": true
+  },
+  "diagnostics": {
+    "suppress_system_services": ["forbidden-exec-sugid"]
+  },
+  "allow_launch_services": true,
+  "rollback": {
+    "exclude_patterns": ["node_modules", ".next", "__pycache__", "target"],
+    "exclude_globs": ["*.tmp.[0-9]*.[0-9a-f]*"]
+  }
+}

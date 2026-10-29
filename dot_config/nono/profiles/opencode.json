@@ -1,0 +1,16 @@
+{
+  "extends": "always-further/opencode",
+  "meta": {
+    "name": "opencode"
+  },
+  "groups": {
+    "include": []
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "allow": [],
+    "read": []
+  }
+}
