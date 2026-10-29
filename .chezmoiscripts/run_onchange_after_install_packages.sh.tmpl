@@ -1,6 +1,8 @@
 #!/bin/bash
 # packages hash: {{ include "dot_config/mise/config.toml" | sha256sum }}
 {{ template "brew-shellenv.sh" }}
-if command -v mise &> /dev/null; then
-    mise trust "$HOME/.config/mise/config.toml" && mise install
+if ! command -v mise &> /dev/null; then
+    echo "mise not found, cannot install tools." >&2
+    exit 1
 fi
+mise trust "$HOME/.config/mise/config.toml" && mise install

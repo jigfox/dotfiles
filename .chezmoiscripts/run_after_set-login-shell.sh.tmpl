@@ -2,7 +2,11 @@
 #!/bin/bash
 {{ template "brew-shellenv.sh" }}
 fish_path="$HOMEBREW_PREFIX/bin/fish"
-[ -x "$fish_path" ] || exit 0
+# Runs on every apply (it is a no-op once set), so a missing fish is retried
+if [ ! -x "$fish_path" ]; then
+    echo "$fish_path not found, login shell not changed." >&2
+    exit 0
+fi
 
 if ! grep -qxF "$fish_path" /etc/shells; then
     echo "Adding $fish_path to /etc/shells..."
