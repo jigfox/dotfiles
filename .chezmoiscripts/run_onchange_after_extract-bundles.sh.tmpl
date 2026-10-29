@@ -6,6 +6,12 @@
 # {{ . }} hash: {{ include (printf "secrets/%s.tar.gz.age" .) | sha256sum }}
 {{ end -}}
 set -euo pipefail
+# nono profiles are replaced as a whole so deletions propagate; the
+# pre-apply hook has already saved local edits, so only refuse if it could not
+"{{ .chezmoi.sourceDir }}/scripts/nono-sync.sh" check
+rm -rf "$HOME/.config/nono/profiles"
+
 for bundle in {{ $bundles | join " " }}; do
     "$CHEZMOI_EXECUTABLE" decrypt "{{ .chezmoi.sourceDir }}/secrets/$bundle.tar.gz.age" | tar -xzf - -C "$HOME"
 done
+"{{ .chezmoi.sourceDir }}/scripts/nono-sync.sh" mark
