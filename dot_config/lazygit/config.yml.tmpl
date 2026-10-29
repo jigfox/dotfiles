@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/lazygit.json
+
+gui:
+  nerdFontsVersion: "3"
+git:
+  autoFetch: false
+services:
+{{- range (include "secrets/gitconfig.yaml.age" | decrypt | fromYaml).git }}
+{{- if and (hasPrefix "gitlab." .prefix) (ne .prefix "gitlab.com") }}
+  "{{ .prefix }}": "gitlab:{{ .prefix }}"
+{{- end }}
+{{- end }}
