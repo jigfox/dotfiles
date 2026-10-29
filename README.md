@@ -10,18 +10,19 @@ A list of tools with default version installed with `mise` can found in [mise/co
 
 ## Setup
 
-The age key used to decrypt secrets is stored in the macOS keychain (service `age`, account `chezmoi`). Store it once and write it to disk before the first `init`, because chezmoi needs it to decrypt files:
+Secrets are encrypted with [age][age]. The key lives in the Passwords app as `chezmoi age key` (synced via iCloud). Setup asks for it once: copy it from Passwords when prompted.
+
+The built-in git is used for the first clone, so no Xcode command line tools are needed up front; Homebrew installs them afterwards.
 
 ```sh
-security add-generic-password -s age -a chezmoi -w "$(cat path/to/age-key.txt)"
-mkdir -p ~/.config/age && security find-generic-password -s age -a chezmoi -w > ~/.config/age/keys.txt && chmod 600 ~/.config/age/keys.txt
+sh -c "$(curl -fsLs https://raw.githubusercontent.com/jigfox/dotfiles/refs/heads/main/scripts/chezmoi.sh)" -- init --apply --use-builtin-git true jigfox
 ```
 
-Then install chezmoi and apply:
+After setup:
 
-```sh
-sh -c "$(curl -fsLs https://raw.githubusercontent.com/jigfox/dotfiles/refs/heads/main/scripts/chezmoi.sh)" -- init --apply jigfox
-```
+- macOS asks for Accessibility permission for AeroSpace.
+- App Store apps install only if this Apple ID has downloaded them before.
+- Reinstall the herdr `claude-session-title` plugin.
 
 ###### Licenses
 
@@ -30,6 +31,7 @@ sh -c "$(curl -fsLs https://raw.githubusercontent.com/jigfox/dotfiles/refs/heads
 The encrypted font files in `private_Library/private_Fonts` are [Comic Code][comic] by Toshi Omagari and they need to be purchased to be used, this is why they are encrypted.
 
 [comic]: https://tosche.net/fonts/comic-code
+[age]: https://age-encryption.org
 [mit]: ./LICENSE
 [chezmoi]: https://chezmoi.io/
 [brew]: https://brew.sh
