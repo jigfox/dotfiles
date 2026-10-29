@@ -1,0 +1,18 @@
+{{- if .work -}}
+#!/bin/bash
+# Work files live under neutral names; link them where their real, company
+# specific names are expected. The names come from encrypted data. Runs on
+# every apply so lost links return.
+set -euo pipefail
+{{ $w := include "secrets/work.yaml.age" | decrypt | fromYaml -}}
+
+profiles="$HOME/.config/nono/profiles"
+mkdir -p "$profiles"
+{{ range $neutral, $name := $w.nono.profiles -}}
+ln -sfn "../work/{{ $neutral }}.json" "$profiles/{{ $name }}.json"
+{{ end -}}
+
+# mise takes config_root from the link's location, not the target's
+mkdir -p "$HOME/src/{{ $w.gitlab_host }}"
+ln -sfn "$HOME/.config/work/mise.toml" "$HOME/src/{{ $w.gitlab_host }}/mise.toml"
+{{ end -}}

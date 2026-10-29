@@ -17,4 +17,5 @@ README.md
 
 {{ if not .work }}
 .config/nono/work
+.config/work
 {{ end }}
