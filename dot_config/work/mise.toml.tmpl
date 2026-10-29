@@ -1,0 +1,192 @@
+# chezmoi:template:left-delimiter="[[" right-delimiter="]]"
+[[- $w := include "secrets/work.yaml.age" | decrypt | fromYaml -]]
+[[- $x := $w.self_approval.excluded_subgroups -]]
+[tools]
+kubectl = "1.33.5"
+kafkactl = "5.14.0"
+sops = "3.11.0"
+node = "lts"
+java = "zulu-23"
+kotlin = "2.2.21"
+gradle = "latest"
+awscli = "latest"
+opentofu = "1.10.7"
+terraform = "1.14.0"
+helm = "3.17.0"
+"npm:pnpm" = "latest"
+fnox = "latest"
+python = "latest"
+uv = "latest"
+azure = "latest"
+
+[env]
+
+MISE_EXPERIMENTAL = 1
+KUBECONFIG = { value = "{{config_root}}/kubeconfig" }
+KAFKA_CTL_CONFIG = { value = "{{config_root}}/kafkactl.yml" }
+AWS_CONFIG_FILE = { value = "{{config_root}}/.aws/config" }
+AWS_SHARED_CREDENTIALS_FILE = { value = "{{config_root}}/.aws/credentials" }
+NPM_CONFIG_USERCONFIG = { value = "{{config_root}}/.npmrc" }
+GLAB_CONFIG_DIR = { value = "{{config_root}}/.glab-cli" }
+GITLAB_HOST = "[[ $w.gitlab_host ]]"
+GITLAB_USER = "[[ $w.gitlab_user ]]"
+GIT_SSH_COMMAND = { value = "ssh -F {{config_root}}/.ssh/config" }
+CLAUDE_CONFIG_DIR = { value = "{{config_root}}/.claude" }
+CODEX_HOME = { value = "{{config_root}}/.codex" }
+GRADLE_USER_HOME = { value = "{{config_root}}/.gradle" }
+DOCKER_CONFIG = { value = "{{config_root}}/.docker" }
+# the Colima VM that ~/.config/mise/scripts/colima-agent starts for this root
+DOCKER_HOST = { value = "unix://{{env.HOME}}/.config/colima/agent-{{config_root | basename | replace(from='.', to='-')}}/docker.sock" }
+TESTCONTAINERS_RYUK_DISABLED = true
+# GIT_SSH_COMMAND = "ssh - ~/.ssh/[[ $w.ssh_key ]] -o 'IdentitiesOnly yes'"
+
+[hooks.enter]
+shell = "fish"
+script = '''
+fnox activate fish | source
+~/.config/mise/scripts/colima-agent enter {{config_root}} $fish_pid
+'''
+
+[hooks.leave]
+shell = "fish"
+script = "~/.config/mise/scripts/colima-agent leave {{config_root}} $fish_pid"
+
+[shell_alias]
+# claude = "exec -- bash -c 'exec -a claude nono run --profile [[ $w.nono.profiles.work ]] --allow-cwd --write \"$1\" --write \"$2\" -- env -u MFA_TOKEN claude \"${@:3}\"' _ \"$GRADLE_USER_HOME\" \"$CLAUDE_CONFIG_DIR\""
+# claude = "exec -a claude nono run --profile [[ $w.nono.profiles.work ]] --allow-cwd --write $GRADLE_USER_HOME --write $CLAUDE_CONFIG_DIR -- env -u MFA_TOKEN claude"
+claude = "mise run claude"
+codex = "nono run --profile [[ $w.nono.profiles.work ]] --allow-cwd -- codex"
+
+[tasks.claude]
+description = "Run Claude via nono with process spoofing"
+run = '''
+#!/usr/bin/env bash
+# nono scrubs HERDR_*, so herdr's Claude hooks would see no pane; hand the vars
+# to env inside the sandbox and allow its socket
+herdr_env=() herdr_socket=()
+while IFS='=' read -r name value; do
+  herdr_env+=("$name=$value")
+done < <(env | grep '^HERDR_')
+# herdr's own socket lets any client type into and read every pane, so the
+# sandbox gets a proxy that only passes this pane's display calls
+if [ -n "${HERDR_SOCKET_PATH:-}" ] && [ -n "${HERDR_PANE_ID:-}" ]; then
+  proxy_dir="$HOME/.local/state/herdr-proxy"
+  proxy_sock="$proxy_dir/$$.sock"
+  mkdir -p -m 700 "$proxy_dir"
+  "$HOME/.config/mise/scripts/herdr-proxy" --listen "$proxy_sock" --upstream "$HERDR_SOCKET_PATH" \
+    --pane "$HERDR_PANE_ID" --parent $$ >>"$proxy_dir/proxy.log" 2>&1 </dev/null &
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    [ -S "$proxy_sock" ] && break
+    sleep 0.1
+  done
+  if [ -S "$proxy_sock" ]; then
+    herdr_socket=(--allow-unix-socket "$proxy_sock")
+    herdr_env+=("HERDR_SOCKET_PATH=$proxy_sock")
+  else
+    echo "warning: herdr proxy did not start, see $proxy_dir/proxy.log" >&2
+  fi
+fi
+# the Colima VM's socket only exists once the enter hook's watcher has booted it
+docker_socket=()
+if [ -S "${DOCKER_HOST#unix://}" ]; then
+  docker_socket=(--allow-unix-socket "${DOCKER_HOST#unix://}")
+else
+  echo "warning: ${DOCKER_HOST#unix://} not up yet, starting Claude without Docker" >&2
+fi
+exec -a claude nono run --profile [[ $w.nono.profiles.work ]] --allow-cwd --write "$GRADLE_USER_HOME" --write "$CLAUDE_CONFIG_DIR" "${herdr_socket[@]}" "${docker_socket[@]}" -- env -u MFA_TOKEN "${herdr_env[@]}" claude "$@"
+'''
+
+[tasks.cma-allow-self-approval]
+alias = "self-approve"
+description = "Allow MR authors to approve their own MRs in [[ $w.self_approval.group ]] (excluding [[ index $x 0 ]]/ and [[ index $x 1 ]]/). Re-run after every GPM deploy, which resets it."
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="[[ $w.gitlab_host ]]"
+GROUP="[[ $w.self_approval.group ]]"
+GROUP_ENC="[[ $w.self_approval.group | replace "/" "%2F" ]]"
+TAB=$(printf '\t')
+
+for bin in glab jq; do
+  command -v "$bin" >/dev/null || { echo "error: $bin is required" >&2; exit 1; }
+done
+
+glab auth status --hostname "$HOST" >/dev/null 2>&1 || {
+  echo "error: not logged in to $HOST - run: glab auth login --hostname $HOST" >&2
+  exit 1
+}
+
+raw=$(glab api --hostname "$HOST" --paginate \
+  "groups/$GROUP_ENC/projects?include_subgroups=true&with_shared=false&archived=false&per_page=100&simple=true" 2>&1) || true
+
+rows=$(printf '%s' "$raw" | jq -r --arg group "$GROUP" '
+    .[]
+    | .path_with_namespace as $p
+    # only projects inside the group itself - never ones merely shared with it
+    | select($p | startswith($group + "/"))
+    # the trailing slash matters: it excludes the [[ index $x 0 ]]/ and [[ index $x 1 ]]/ subgroups,
+    # not root-level projects such as [[ index $x 0 ]]-bff or gdpr-[[ index $x 0 ]]
+    | select($p | test("^\($group)/([[ join "|" $x ]])/") | not)
+    | "\(.id)\t\($p)"
+  ' 2>/dev/null | sort -t"$TAB" -k2) || true
+
+if [ -z "$rows" ]; then
+  echo "error: could not list projects in $GROUP. glab replied:" >&2
+  printf '%s\n' "$raw" | head -n 5 >&2
+  exit 1
+fi
+
+read_setting() {
+  printf '%s' "$1" | jq -r '.merge_requests_author_approval | tostring' 2>/dev/null || echo unknown
+}
+
+oneline() {
+  printf '%s' "$1" | tr '\n' ' ' | cut -c1-140
+}
+
+changed=0; already=0; failed=0
+
+while IFS="$TAB" read -r id path; do
+  [ -n "${id:-}" ] || continue
+
+  if ! resp=$(glab api --hostname "$HOST" "projects/$id/approvals" 2>&1); then
+    printf 'FAILED   %s: %s\n' "$path" "$(oneline "$resp")"
+    failed=$((failed + 1)); continue
+  fi
+
+  case "$(read_setting "$resp")" in
+    true)
+      printf 'ok       %s\n' "$path"
+      already=$((already + 1)); continue ;;
+    false) ;;
+    *)
+      printf 'FAILED   %s: unexpected response: %s\n' "$path" "$(oneline "$resp")"
+      failed=$((failed + 1)); continue ;;
+  esac
+
+  if [ -n "${DRY_RUN:-}" ]; then
+    printf 'would    %s\n' "$path"
+    continue
+  fi
+
+  if ! resp=$(glab api --hostname "$HOST" --method POST "projects/$id/approvals" \
+      --field merge_requests_author_approval=true 2>&1); then
+    printf 'FAILED   %s: %s\n' "$path" "$(oneline "$resp")"
+    failed=$((failed + 1)); continue
+  fi
+
+  if [ "$(read_setting "$resp")" != "true" ]; then
+    printf 'FAILED   %s: setting did not stick - locked at group or instance level?\n' "$path"
+    failed=$((failed + 1)); continue
+  fi
+
+  printf 'changed  %s\n' "$path"
+  changed=$((changed + 1))
+done <<ROWS
+$rows
+ROWS
+
+printf '\n%d changed, %d already allowed, %d failed\n' "$changed" "$already" "$failed"
+[ "$failed" -eq 0 ]
+'''
