@@ -9,6 +9,14 @@ encryption = "age"
 [diff]
   pager = "delta"
 
+# Local nono profile edits are bundled into the source before they could be overwritten
+[hooks.apply.pre]
+  command = "{{ .chezmoi.sourceDir }}/scripts/nono-sync.sh"
+  args = ["save"]
+[hooks.update.pre]
+  command = "{{ .chezmoi.sourceDir }}/scripts/nono-sync.sh"
+  args = ["save"]
+
 [data]
   work = {{ $work }}
   personal = {{ $personal }}
