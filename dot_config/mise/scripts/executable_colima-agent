@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Reference-counted Colima VM for sandboxed agents, one per mise config root.
+# mise's enter/leave hooks register the calling fish shell's PID. One watcher
+# per root starts the VM, prunes PIDs of shells that are gone (leave never
+# fires when a terminal is closed) and stops the VM once none are left.
+set -euo pipefail
+
+usage() {
+  echo "usage: ${0##*/} enter|leave <config-root> <shell-pid> | watch|status <config-root>" >&2
+  exit 2
+}
+
+[ $# -ge 2 ] || usage
+CMD=$1
+ROOT=$(cd "$2" && pwd -P)
+
+# Colima profile names allow letters, digits and dashes only
+name=$(basename "$ROOT" | tr -c 'A-Za-z0-9-\n' '-')
+PROFILE="agent-$name"
+STATE="$HOME/.local/state/colima-agent/$name"
+PIDS="$STATE/pids"
+LOCK="$STATE/watcher.lock"
+LOG="$STATE/watcher.log"
+INTERVAL=15
+GRACE=2 # empty checks in a row before stopping, so a quick cd out and back keeps the VM
+
+# The hooks can fire inside nono too, where Colima is out of reach.
+[ -z "${NONO_CAP_FILE:-}" ] || exit 0
+
+mkdir -p "$PIDS"
+
+live_shells() {
+  local f pid n=0
+  for f in "$PIDS"/*; do
+    [ -e "$f" ] || continue
+    pid=${f##*/}
+    # the comm check keeps a recycled PID from holding the VM up
+    if ps -p "$pid" -o comm= 2>/dev/null | grep -q fish; then
+      n=$((n + 1))
+    else
+      rm -f "$f"
+    fi
+  done
+  echo "$n"
+}
+
+ensure_watcher() {
+  mkdir "$LOCK" 2>/dev/null || return 0
+  nohup "$0" watch "$ROOT" >>"$LOG" 2>&1 </dev/null &
+}
+
+watch() {
+  colima status "$PROFILE" >/dev/null 2>&1 ||
+    colima start "$PROFILE" --mount "$ROOT:w" --cpu 4 --memory 8
+  local empty=0
+  while [ "$empty" -lt "$GRACE" ]; do
+    sleep "$INTERVAL"
+    if [ "$(live_shells)" -gt 0 ]; then empty=0; else empty=$((empty + 1)); fi
+  done
+  colima stop "$PROFILE"
+  rmdir "$LOCK"
+  # a shell may have registered while we were stopping and seen our lock
+  [ "$(live_shells)" -eq 0 ] || ensure_watcher
+}
+
+case "$CMD" in
+enter) : >"$PIDS/${3:?shell pid}" && ensure_watcher ;;
+leave) rm -f "$PIDS/${3:?shell pid}" ;;
+watch) watch ;;
+status) echo "$PROFILE shells: $(live_shells)" && colima status "$PROFILE" ;;
+*) usage ;;
+esac
