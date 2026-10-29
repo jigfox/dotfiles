@@ -1,0 +1,42 @@
+brew 'age'
+brew 'chezmoi'
+brew 'eza'
+brew 'difftastic'
+brew 'fd'
+brew 'fish'
+brew 'fnox'
+brew 'fzf'
+brew 'git'
+brew 'git-delta'
+brew 'git-lfs'
+brew 'herdr'
+brew 'jq'
+brew 'krew'
+brew 'lazygit'
+brew 'mas'
+brew 'mise'
+brew 'moreutils'
+brew 'neovim'
+brew 'ripgrep'
+brew 'sops'
+brew 'sshpass'
+brew 'starship'
+brew 'yq'
+brew 'zoxide'
+
+mas 'OpenIn', id: 1_643_649_331
+mas 'Wireguard', id: 1_451_685_025
+
+cask 'kitty'
+cask 'font-hack-nerd-font'
+cask 'font-symbols-only-nerd-font'
+
+cask 'nikitabobko/tap/aerospace'
+
+{{- if .work }}
+
+# work
+brew 'openconnect'
+mas 'Microsoft Outlook', id: 985_367_838
+mas 'Slack', id: 803_453_959
+{{- end }}

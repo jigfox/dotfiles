@@ -1,8 +1,9 @@
 #!/bin/bash
-# Brewfile hash: {{ include "dot_config/brew/Brewfile" | sha256sum }}
+# Brewfile hash: {{ includeTemplate "dot_config/brew/Brewfile.tmpl" . | sha256sum }}
 {{ if eq .chezmoi.os "darwin" -}}
+{{ template "brew-shellenv.sh" }}
 if command -v brew &> /dev/null; then
     echo "Syncing Homebrew packages..."
-    brew bundle --file=~/.config/brew/Brewfile
+    brew bundle --file="$HOME/.config/brew/Brewfile"
 fi
 {{ end -}}
