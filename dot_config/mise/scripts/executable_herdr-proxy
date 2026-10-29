@@ -1,0 +1,136 @@
+#!/usr/bin/env -S python3 -I
+"""Pane-scoped proxy in front of herdr's API socket for a sandboxed Claude.
+
+herdr's socket has no access control: any client can split panes, type into
+them and read their output, which from inside nono is a way out. This proxy
+forwards only the display calls the Claude hooks make, only for the pane the
+session runs in, and exits when the session does.
+"""
+import argparse
+import json
+import os
+import signal
+import socket
+import socketserver
+import sys
+import threading
+import time
+
+# method -> the param that names the pane it acts on
+ALLOWED = {
+    "pane.rename": "pane_id",
+    "pane.report_agent_session": "pane_id",
+    "agent.rename": "target",
+}
+MAX_LINE = 64 * 1024
+
+
+def log(message):
+    print("%s %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), message), flush=True)
+
+
+def encode(message):
+    return (json.dumps(message) + "\n").encode()
+
+
+def reject(request_id, message):
+    return encode({"id": request_id, "error": {"code": "forbidden", "message": message}})
+
+
+class Proxy(socketserver.ThreadingUnixStreamServer):
+    daemon_threads = True
+
+    def __init__(self, listen, upstream, pane):
+        self.upstream = upstream
+        self.pane = pane
+        super().__init__(listen, Handler)
+
+    def forward(self, raw):
+        try:
+            request = json.loads(raw)
+        except ValueError:
+            return reject(None, "invalid json")
+        if not isinstance(request, dict):
+            return reject(None, "invalid request")
+        request_id = request.get("id")
+        method = request.get("method")
+        params = request.get("params")
+        key = ALLOWED.get(method)
+        if key is None or not isinstance(params, dict) or params.get(key) != self.pane:
+            log("rejected %s %s" % (method, json.dumps(params)[:200]))
+            return reject(request_id, "%s is not allowed through the sandbox proxy" % method)
+
+        # rebuilt from the known fields, so nothing else reaches herdr
+        clean = {"id": request_id, "method": method, "params": params}
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as upstream:
+                upstream.settimeout(2)
+                upstream.connect(self.upstream)
+                upstream.sendall(encode(clean))
+                reply = b""
+                while b"\n" not in reply and len(reply) < MAX_LINE:
+                    chunk = upstream.recv(4096)
+                    if not chunk:
+                        break
+                    reply += chunk
+        except OSError as error:
+            return reject(request_id, "herdr unreachable: %s" % error)
+        return reply.split(b"\n", 1)[0] + b"\n"
+
+
+class Handler(socketserver.StreamRequestHandler):
+    timeout = 5
+
+    def handle(self):
+        while True:
+            try:
+                raw = self.rfile.readline(MAX_LINE + 1)
+            except OSError:
+                return
+            if not raw or len(raw) > MAX_LINE:
+                return
+            self.wfile.write(self.server.forward(raw))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--listen", required=True, help="socket path handed to the sandbox")
+    parser.add_argument("--upstream", required=True, help="herdr's real socket")
+    parser.add_argument("--pane", required=True, help="HERDR_PANE_ID of the session")
+    parser.add_argument("--parent", type=int, required=True, help="exit when this pid is gone")
+    args = parser.parse_args()
+
+    try:
+        os.unlink(args.listen)
+    except FileNotFoundError:
+        pass
+    os.umask(0o077)
+    server = Proxy(args.listen, args.upstream, args.pane)
+
+    def stop(*_):
+        try:
+            os.unlink(args.listen)
+        except FileNotFoundError:
+            pass
+        os._exit(0)
+
+    for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+        signal.signal(signum, stop)
+
+    def watch_parent():
+        while True:
+            try:
+                os.kill(args.parent, 0)
+            except ProcessLookupError:
+                stop()
+            except PermissionError:
+                pass
+            time.sleep(1)
+
+    threading.Thread(target=watch_parent, daemon=True).start()
+    log("listening on %s for pane %s (parent %d)" % (args.listen, args.pane, args.parent))
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
