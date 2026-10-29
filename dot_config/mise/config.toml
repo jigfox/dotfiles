@@ -2,16 +2,20 @@
 experimental = true
 
 [tools]
-age = "latest"
-eza = "latest"
-fd = "latest"
-fnox = "latest"
-fzf = "latest"
-jq = "latest"
-lazygit = "latest"
-neovim = "latest"
-nodejs = "lts"
-ripgrep = "latest"
-starship = "latest"
-yq = "latest"
-zoxide = "latest"
+node = "lts"
+java = "zulu"
+
+[env]
+MISE_EXPERIMENTAL = "1"
+
+# [prepare.npm]
+# auto = true
+#
+# [prepare.pnpm]
+# auto = true
+#
+# [prepare.yarn]
+# auto = true
+#
+# [prepare.go]
+# auto = true
