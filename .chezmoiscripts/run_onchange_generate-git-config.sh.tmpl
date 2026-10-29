@@ -1,0 +1,15 @@
+#!/bin/bash
+# packages hash: {{ include "./secrets/gitconfig.yaml.age" | sha256sum }}
+echo setup git
+
+mkdir -p ~/.config/git
+
+{{ $groups := include "./secrets/gitconfig.yaml.age" | decrypt | fromYaml }}
+
+{{ range $groups.git}}
+cat <<EOF > ~/.config/git/{{.name}}.gitconfig
+# vim: set ft=gitconfig :
+[user]
+  email = {{ .user.email }}
+EOF
+{{ end }}

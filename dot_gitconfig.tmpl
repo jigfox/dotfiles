@@ -1,0 +1,88 @@
+# vim: set ft=gitconfig :
+[user]
+  useConfigOnly = true
+  name = Jens Fahnenbruck
+[color]
+  ui = true
+  interactive = auto
+[color "branch"]
+  current = yellow reverse
+  local = yellow
+  remote = green
+[color "diff"]
+  meta = yellow
+  frag = blue
+  old = red
+  new = green
+  whitespace = red reverse
+[color "status"]
+  added = yellow
+  changed = green
+  untracked = cyan
+[core]
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+	excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
+  editor = nvim
+	pager = delta
+	attributesfile = {{ .chezmoi.homeDir }}/.config/git/attributes
+[interactive]
+  diffFilter = delta --color-only
+[delta]
+  navigate = true
+  dark = true
+[alias]
+  pf = push --force-with-lease
+  pmr = push -o merge_request.create
+  pmrm = push -o merge_request.create -o merge_request.merge_when_pipeline_succeeds
+  st = status --short
+  ci = commit --verbose
+  ca = commit --verbose --amend
+  lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  lol = log --graph --decorate --pretty=oneline --abbrev-commit
+  lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+  ls = diff-tree --no-commit-id --name-only -r
+  pn = push --no-verify
+  co = checkout
+  df = diff
+  dfc = diff --cached
+  rbc = rebase --continue
+  pr = pull --rebase
+  aliases = !git config --get-regexp 'alias.*' | colrm 1 6 | sed 's/[ ]/ = /' | sort
+  sw = switch
+  dft = difftool
+[rerere]
+	enabled = true
+[push]
+	default = current
+	followTags = true
+	autoSetupRemote = true
+[branch]
+  autosetuprebase = always
+[init]
+	defaultBranch = main
+[diff]
+  tool = difftastic
+[difftool]
+  prompt = false
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+[pager]
+  difftool = true
+[pull]
+	rebase = true
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+# dotfiles and neovim config live on GitHub
+[includeIf "gitdir:{{ .chezmoi.sourceDir }}/"]
+  path = .config/git/github.gitconfig
+[includeIf "gitdir:~/.config/nvim/"]
+  path = .config/git/github.gitconfig
+{{ $groups := include "./secrets/gitconfig.yaml.age" | decrypt | fromYaml -}}
+{{ range $groups.git -}}
+[includeIf "gitdir:~/src/{{.prefix}}/"]
+  path = .config/git/{{.name}}.gitconfig
+{{ end -}}
+

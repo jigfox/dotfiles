@@ -1,0 +1,9 @@
+configstore
+kls_database.db
+.DS_Store
+.envrc
+mise.local.toml
+.github/copilot-instructions.local.md
+
+**/.claude/settings.local.json
+.pnpm-store
