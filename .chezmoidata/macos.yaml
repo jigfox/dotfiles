@@ -1,0 +1,8 @@
+macos:
+  defaults:
+    # Mission Control: don't rearrange spaces based on most recent use
+    - domain: com.apple.dock
+      key: mru-spaces
+      type: bool
+      value: false
+      restart: Dock
