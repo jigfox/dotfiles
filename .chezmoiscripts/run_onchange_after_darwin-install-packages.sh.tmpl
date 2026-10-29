@@ -2,8 +2,10 @@
 # Brewfile hash: {{ includeTemplate "dot_config/brew/Brewfile.tmpl" . | sha256sum }}
 {{ if eq .chezmoi.os "darwin" -}}
 {{ template "brew-shellenv.sh" }}
-if command -v brew &> /dev/null; then
-    echo "Syncing Homebrew packages..."
-    brew bundle --file="$HOME/.config/brew/Brewfile"
+if ! command -v brew &> /dev/null; then
+    echo "brew not found, cannot sync packages." >&2
+    exit 1
 fi
+echo "Syncing Homebrew packages..."
+brew bundle --file="$HOME/.config/brew/Brewfile"
 {{ end -}}

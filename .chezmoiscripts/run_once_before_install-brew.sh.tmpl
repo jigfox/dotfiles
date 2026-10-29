@@ -17,4 +17,10 @@ if ! command -v brew &> /dev/null; then
 else
     echo "Homebrew already installed. Skipping."
 fi
+
+# Fail so chezmoi retries on the next apply instead of recording success
+if ! command -v brew &> /dev/null; then
+    echo "Homebrew installation failed." >&2
+    exit 1
+fi
 {{ end -}}
