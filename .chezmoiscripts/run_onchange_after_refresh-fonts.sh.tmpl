@@ -4,7 +4,7 @@
 # Dependency: Monitor all encrypted font files
 # We loop over them and include their SHA256 hashes.
 # If any hash changes (or a file is added/removed), this script will update and run.
-{{ range glob (joinPath .chezmoi.sourceDir "Library/Fonts/encrypted_*.otf.age") -}}
+{{ range glob (joinPath .chezmoi.sourceDir "private_Library/private_Fonts/encrypted_*.otf.age") -}}
 # Hash: {{ include . | sha256sum }}
 {{ end -}}
 
