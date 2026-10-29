@@ -1,0 +1,6 @@
+[env]
+AGE_EDIT_ID = "~/.config/age/keys.txt"
+
+[tasks.default]
+alias = "apply"
+run = "chezmoi apply"

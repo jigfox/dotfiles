@@ -1,4 +1,16 @@
 # Ignore the Mac library folder on Linux
 {{ if ne .chezmoi.os "darwin" }}
-Library
+private_Library
 {{ end }}
+
+# ignore setup scripts
+scripts/
+scripts/**
+
+# ignore secrets
+secrets/
+secrets/**
+
+mise.toml
+LICENSE
+README.md
