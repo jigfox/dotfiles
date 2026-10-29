@@ -1,0 +1,44 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+palette = "duskfox"
+
+[palettes.duskfox]
+red = "#eb6f92"
+green = "#a3be8c"
+purple = "#c4a7e7"
+yellow = "#f6c177"
+os_bg = "#6e6a86"
+os_fg = "#191726"
+dir_bg = "#a3be8c"
+dir_fg = "#232136"
+git_bg = "#f6c177"
+git_fg = "#2d2a45"
+lang_bg = "#569fba"
+lang_fg = "#373354"
+
+[kubernetes]
+disabled = false
+detect_env_vars = ['KUBECONFIG']
+
+[mise]
+disabled = false
+
+[[kubernetes.contexts]]
+context_pattern = "^r5s-prod$"
+context_alias = "prod"
+style = "red"
+
+[[kubernetes.contexts]]
+context_pattern = "^r5s-dev$"
+context_alias = "dev"
+style = "green"
+
+[[kubernetes.contexts]]
+context_pattern = "^r5s-preprod$"
+context_alias = "preprod"
+style = "yellow"
+
+[aws.profile_aliases]
+rin-tvnow-dome-preprod = 'preprod'
+rin-tvnow-dome-prod = 'prod'
+rin-tvnow-dome-dev = 'dev'
