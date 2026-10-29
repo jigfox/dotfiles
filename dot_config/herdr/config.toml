@@ -1,0 +1,46 @@
+onboarding = false
+
+[keys]
+prefix = "ctrl+a"
+
+# Seamless pane navigation (nvim -> herdr -> kitty), see navigate.sh
+[[keys.command]]
+key = "ctrl+h"
+type = "shell"
+command = "~/.config/herdr/navigate.sh left"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "shell"
+command = "~/.config/herdr/navigate.sh down"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "shell"
+command = "~/.config/herdr/navigate.sh up"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "shell"
+command = "~/.config/herdr/navigate.sh right"
+
+# Seamless pane resize (nvim -> herdr -> kitty), see resize.sh
+[[keys.command]]
+key = "ctrl+shift+h"
+type = "shell"
+command = "~/.config/herdr/resize.sh left"
+
+[[keys.command]]
+key = "ctrl+shift+j"
+type = "shell"
+command = "~/.config/herdr/resize.sh down"
+
+[[keys.command]]
+key = "ctrl+shift+k"
+type = "shell"
+command = "~/.config/herdr/resize.sh up"
+
+[[keys.command]]
+key = "ctrl+shift+l"
+type = "shell"
+command = "~/.config/herdr/resize.sh right"
