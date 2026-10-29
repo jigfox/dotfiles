@@ -6,18 +6,16 @@
 HERDR=/opt/homebrew/bin/herdr
 JQ=/opt/homebrew/bin/jq
 NVIM=/opt/homebrew/bin/nvim
-KITTEN=/Applications/kitty.app/Contents/MacOS/kitten
-KITTY_SOCKET=unix:/tmp/mykitty
 NVIM_RUN_DIR="$(getconf DARWIN_USER_TEMP_DIR)nvim.$(id -un)"
 
 dir=$1
 from_nvim=$2
 
 case $dir in
-  left) key=ctrl+shift+h; kitty_dir=left; axis="left right" ;;
-  down) key=ctrl+shift+j; kitty_dir=bottom; axis="up down" ;;
-  up) key=ctrl+shift+k; kitty_dir=top; axis="up down" ;;
-  right) key=ctrl+shift+l; kitty_dir=right; axis="left right" ;;
+  left) key=ctrl+shift+h; axis="left right" ;;
+  down) key=ctrl+shift+j; axis="up down" ;;
+  up) key=ctrl+shift+k; axis="up down" ;;
+  right) key=ctrl+shift+l; axis="left right" ;;
   *) echo "usage: $0 left|down|up|right [--from-nvim]" >&2; exit 2 ;;
 esac
 
@@ -46,4 +44,5 @@ for side in $axis; do
   fi
 done
 
-exec "$KITTEN" @ --to "$KITTY_SOCKET" action kitten pass_resize.py "$kitty_dir" "$key" force
+# at the herdr edge: hand off to the outer terminal (kitty or Ghostty)
+exec "$(dirname "$0")/outer.sh" resize "$dir"
