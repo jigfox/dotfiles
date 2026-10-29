@@ -1,0 +1,5 @@
+{{- range (include "secrets/gitconfig.yaml.age" | decrypt | fromYaml).git }}
+{{- if and (hasKey . "copilot") .copilot }}
+~/src/{{ .prefix }}/
+{{- end }}
+{{- end }}

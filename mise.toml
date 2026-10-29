@@ -4,3 +4,8 @@ AGE_EDIT_ID = "~/.config/age/keys.txt"
 [tasks.default]
 alias = "apply"
 run = "chezmoi apply"
+
+[tasks."nono:save"]
+description = "Encrypt ~/.config/nono/profiles back into the source repo"
+env = { COPYFILE_DISABLE = "1" }
+run = "tar -C ~ -czf - .config/nono/profiles | chezmoi encrypt > secrets/nono.tar.gz.age.tmp && mv secrets/nono.tar.gz.age.tmp secrets/nono.tar.gz.age"

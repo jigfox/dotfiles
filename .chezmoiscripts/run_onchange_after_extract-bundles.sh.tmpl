@@ -1,0 +1,11 @@
+#!/bin/bash
+# Bundles keep file names, not only contents, out of the public repo
+{{ $bundles := list "nono" -}}
+{{ if .work }}{{ $bundles = append $bundles "work-ssh" }}{{ end -}}
+{{ range $bundles -}}
+# {{ . }} hash: {{ include (printf "secrets/%s.tar.gz.age" .) | sha256sum }}
+{{ end -}}
+set -euo pipefail
+for bundle in {{ $bundles | join " " }}; do
+    "$CHEZMOI_EXECUTABLE" decrypt "{{ .chezmoi.sourceDir }}/secrets/$bundle.tar.gz.age" | tar -xzf - -C "$HOME"
+done
