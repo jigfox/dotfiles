@@ -1,0 +1,79 @@
+#!/usr/bin/env -S python3 -I
+"""Serve a stdio program on a unix socket, one process per connection.
+
+Lets a sandboxed agent use a program that has to run outside the sandbox, such
+as an MCP server needing credentials the sandbox must not see: the agent only
+gets the socket (`nc -U <socket>` as its stdio command), while the program and
+its credentials stay outside. Exits when the session does.
+"""
+import argparse
+import os
+import signal
+import socket
+import subprocess
+import sys
+import threading
+import time
+
+
+def log(message):
+    print("%s %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), message), flush=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--listen", required=True, help="socket path handed to the sandbox")
+    parser.add_argument("--parent", type=int, required=True, help="exit when this pid is gone")
+    parser.add_argument("command", nargs=argparse.REMAINDER, help="-- program [args...]")
+    args = parser.parse_args()
+    command = args.command[1:] if args.command[:1] == ["--"] else args.command
+    if not command:
+        parser.error("no program given")
+
+    try:
+        os.unlink(args.listen)
+    except FileNotFoundError:
+        pass
+    os.umask(0o077)
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server.bind(args.listen)
+    server.listen()
+    children = []
+
+    def stop(*_):
+        try:
+            os.unlink(args.listen)
+        except FileNotFoundError:
+            pass
+        for child in children:
+            if child.poll() is None:
+                child.terminate()
+        os._exit(0)
+
+    for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+        signal.signal(signum, stop)
+
+    def watch_parent():
+        while True:
+            try:
+                os.kill(args.parent, 0)
+            except ProcessLookupError:
+                stop()
+            except PermissionError:
+                pass
+            time.sleep(1)
+
+    threading.Thread(target=watch_parent, daemon=True).start()
+    log("serving %s on %s (parent %d)" % (command[0], args.listen, args.parent))
+    while True:
+        conn, _ = server.accept()
+        # the child gets its own copy of the connection as stdin and stdout and
+        # ends on EOF when the client disconnects
+        with conn:
+            child = subprocess.Popen(command, stdin=conn.fileno(), stdout=conn.fileno())
+        children[:] = [c for c in children if c.poll() is None] + [child]
+        log("connection served by pid %d" % child.pid)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

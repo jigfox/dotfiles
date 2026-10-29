@@ -18,6 +18,7 @@ fnox = "latest"
 python = "latest"
 uv = "latest"
 azure = "latest"
+"aqua:containers/kubernetes-mcp-server" = "0.0.69"
 
 [env]
 
@@ -61,14 +62,16 @@ codex = "mise run codex"
 description = "Run Claude in the work sandbox"
 run = '''
 #!/usr/bin/env bash
-exec ~/.config/mise/scripts/nono-agent [[ $w.nono.profiles.work ]] claude --write "$GRADLE_USER_HOME" --write "$CLAUDE_CONFIG_DIR" -- "$@"
+exec ~/.config/mise/scripts/nono-agent [[ $w.nono.profiles.work ]] claude --write "$GRADLE_USER_HOME" --write "$CLAUDE_CONFIG_DIR" \
+  --mcp kubernetes "kubernetes-mcp-server --config $HOME/.config/work/kubernetes-mcp.toml" -- "$@"
 '''
 
 [tasks.codex]
 description = "Run Codex in the work sandbox"
 run = '''
 #!/usr/bin/env bash
-exec ~/.config/mise/scripts/nono-agent [[ $w.nono.profiles.work ]] codex --write "$GRADLE_USER_HOME" --write "$CODEX_HOME" -- "$@"
+exec ~/.config/mise/scripts/nono-agent [[ $w.nono.profiles.work ]] codex --write "$GRADLE_USER_HOME" --write "$CODEX_HOME" \
+  --mcp kubernetes "kubernetes-mcp-server --config $HOME/.config/work/kubernetes-mcp.toml" -- "$@"
 '''
 
 [tasks.cma-allow-self-approval]
