@@ -1,0 +1,19 @@
+{
+  "extends": "always-further/opencode",
+  "meta": {
+    "name": "opencode-ant"
+  },
+  "environment": {
+    "allow_vars": ["ANTHROPIC_API_KEY"]
+  },
+  "groups": {
+    "include": []
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "allow": [],
+    "read": []
+  }
+}

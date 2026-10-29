@@ -14,3 +14,7 @@ secrets/**
 mise.toml
 LICENSE
 README.md
+
+{{ if not .work }}
+.config/nono/work
+{{ end }}

@@ -1,0 +1,12 @@
+{{- if .work -}}
+#!/bin/bash
+# Work profiles live under neutral names; link them under their real names,
+# which come from encrypted data. Runs on every apply so lost links return.
+set -euo pipefail
+profiles="$HOME/.config/nono/profiles"
+mkdir -p "$profiles"
+{{ $w := include "secrets/work.yaml.age" | decrypt | fromYaml -}}
+{{ range $neutral, $name := $w.nono.profiles -}}
+ln -sfn "../work/{{ $neutral }}.json" "$profiles/{{ $name }}.json"
+{{ end -}}
+{{ end -}}
