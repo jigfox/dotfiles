@@ -1,0 +1,14 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+{{ template "brew-shellenv.sh" }}
+fish_path="$HOMEBREW_PREFIX/bin/fish"
+[ -x "$fish_path" ] || exit 0
+
+if ! grep -qxF "$fish_path" /etc/shells; then
+    echo "Adding $fish_path to /etc/shells..."
+    echo "$fish_path" | sudo tee -a /etc/shells > /dev/null
+fi
+if [ "$(dscl . -read "$HOME" UserShell | awk '{print $2}')" != "$fish_path" ]; then
+    chsh -s "$fish_path"
+fi
+{{ end -}}
