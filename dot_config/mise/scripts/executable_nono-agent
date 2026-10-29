@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Runs an AI agent (claude, codex, ...) in a nono sandbox with herdr and the
+# Colima Docker socket wired up.
+#
+#   nono-agent <profile> <agent> [--write DIR]... [-- agent args...]
+#
+# No `set -u`: macOS bash 3.2 treats empty arrays as unset.
+set -eo pipefail
+
+profile="$1" agent="$2"
+shift 2
+writes=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --write) writes+=(--write "$2"); shift 2 ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+done
+
+# nono scrubs HERDR_*, so herdr's agent hooks would see no pane; hand the vars
+# to env inside the sandbox and allow its socket
+herdr_env=() herdr_socket=()
+while IFS='=' read -r name value; do
+  herdr_env+=("$name=$value")
+done < <(env | grep '^HERDR_')
+# herdr's own socket lets any client type into and read every pane, so the
+# sandbox gets a proxy that only passes this pane's display calls
+if [ -n "${HERDR_SOCKET_PATH:-}" ] && [ -n "${HERDR_PANE_ID:-}" ]; then
+  proxy_dir="$HOME/.local/state/herdr-proxy"
+  proxy_sock="$proxy_dir/$$.sock"
+  mkdir -p -m 700 "$proxy_dir"
+  "$HOME/.config/mise/scripts/herdr-proxy" --listen "$proxy_sock" --upstream "$HERDR_SOCKET_PATH" \
+    --pane "$HERDR_PANE_ID" --parent $$ >>"$proxy_dir/proxy.log" 2>&1 </dev/null &
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    [ -S "$proxy_sock" ] && break
+    sleep 0.1
+  done
+  if [ -S "$proxy_sock" ]; then
+    herdr_socket=(--allow-unix-socket "$proxy_sock")
+    herdr_env+=("HERDR_SOCKET_PATH=$proxy_sock")
+  else
+    echo "warning: herdr proxy did not start, see $proxy_dir/proxy.log" >&2
+  fi
+fi
+
+# the Colima VM's socket only exists once the enter hook's watcher has booted it
+docker_socket=()
+if [ -S "${DOCKER_HOST#unix://}" ]; then
+  docker_socket=(--allow-unix-socket "${DOCKER_HOST#unix://}")
+else
+  echo "warning: ${DOCKER_HOST#unix://} not up yet, starting $agent without Docker" >&2
+fi
+
+# exec -a: the sandbox process carries the agent's name, so herdr detects it
+exec -a "$agent" nono run --profile "$profile" --allow-cwd "${writes[@]}" "${herdr_socket[@]}" "${docker_socket[@]}" \
+  -- env -u MFA_TOKEN "${herdr_env[@]}" "$agent" "$@"
