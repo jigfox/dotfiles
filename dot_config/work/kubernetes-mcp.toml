@@ -1,0 +1,4 @@
+# Read-only Kubernetes MCP server for the sandboxed agents. It runs outside the
+# sandbox (see ~/.config/mise/scripts/nono-agent) and takes the cluster from
+# $KUBECONFIG, which the sandbox itself cannot read.
+read_only = true

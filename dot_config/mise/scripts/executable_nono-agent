@@ -2,17 +2,18 @@
 # Runs an AI agent (claude, codex, ...) in a nono sandbox with herdr and the
 # Colima Docker socket wired up.
 #
-#   nono-agent <profile> <agent> [--write DIR]... [-- agent args...]
+#   nono-agent <profile> <agent> [--write DIR]... [--mcp NAME COMMAND]... [-- agent args...]
 #
 # No `set -u`: macOS bash 3.2 treats empty arrays as unset.
 set -eo pipefail
 
 profile="$1" agent="$2"
 shift 2
-writes=()
+writes=() mcp_names=() mcp_commands=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --write) writes+=(--write "$2"); shift 2 ;;
+    --mcp) mcp_names+=("$2"); mcp_commands+=("$3"); shift 3 ;;
     --) shift; break ;;
     *) break ;;
   esac
@@ -44,6 +45,40 @@ if [ -n "${HERDR_SOCKET_PATH:-}" ] && [ -n "${HERDR_PANE_ID:-}" ]; then
   fi
 fi
 
+# MCP servers that need credentials the sandbox must not see run outside it;
+# the agent reaches each one through a socket, one server process per connection
+mcp_socket=() agent_args=() claude_servers=()
+if [ ${#mcp_names[@]} -gt 0 ]; then
+  mcp_dir="$HOME/.local/state/agent-mcp"
+  mkdir -p -m 700 "$mcp_dir"
+fi
+for i in "${!mcp_names[@]}"; do
+  name="${mcp_names[$i]}"
+  sock="$mcp_dir/$$-$name.sock"
+  read -ra command <<<"${mcp_commands[$i]}"
+  "$HOME/.config/mise/scripts/stdio-socket" --listen "$sock" --parent $$ -- "${command[@]}" \
+    >>"$mcp_dir/$name.log" 2>&1 </dev/null &
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    [ -S "$sock" ] && break
+    sleep 0.1
+  done
+  if [ ! -S "$sock" ]; then
+    echo "warning: MCP server $name did not start, see $mcp_dir/$name.log" >&2
+    continue
+  fi
+  mcp_socket+=(--allow-unix-socket "$sock")
+  case "$agent" in
+    claude) claude_servers+=("\"$name\":{\"command\":\"nc\",\"args\":[\"-U\",\"$sock\"]}") ;;
+    codex) agent_args+=(-c "mcp_servers.$name.command=\"nc\"" -c "mcp_servers.$name.args=[\"-U\", \"$sock\"]") ;;
+    *) echo "warning: no MCP wiring for $agent, skipping $name" >&2 ;;
+  esac
+done
+claude_mcp=()
+if [ ${#claude_servers[@]} -gt 0 ]; then
+  # --mcp-config takes several values, so it goes last to not swallow arguments
+  claude_mcp=(--mcp-config "{\"mcpServers\":{$(IFS=,; echo "${claude_servers[*]}")}}")
+fi
+
 # the Colima VM's socket only exists once the enter hook's watcher has booted it
 docker_socket=()
 if [ -S "${DOCKER_HOST#unix://}" ]; then
@@ -53,5 +88,5 @@ else
 fi
 
 # exec -a: the sandbox process carries the agent's name, so herdr detects it
-exec -a "$agent" nono run --profile "$profile" --allow-cwd "${writes[@]}" "${herdr_socket[@]}" "${docker_socket[@]}" \
-  -- env -u MFA_TOKEN "${herdr_env[@]}" "$agent" "$@"
+exec -a "$agent" nono run --profile "$profile" --allow-cwd "${writes[@]}" "${herdr_socket[@]}" "${docker_socket[@]}" "${mcp_socket[@]}" \
+  -- env -u MFA_TOKEN "${herdr_env[@]}" "$agent" "${agent_args[@]}" "$@" "${claude_mcp[@]}"
