@@ -1,0 +1,40 @@
+/* Tridactyl in duskfox (nightfox.nvim), same palette as nvim, Ghostty, sketchybar and the Zen UI */
+:root {
+    --duskfox-bg0: #191726;
+    --duskfox-bg1: #232136;
+    --duskfox-bg2: #2d2a45;
+    --duskfox-bg4: #4b4673;
+    --duskfox-sel1: #63577d;
+    --duskfox-fg1: #e0def4;
+    --duskfox-fg3: #6e6a86;
+    --duskfox-magenta: #c4a7e7;
+    --duskfox-yellow: #f6c177;
+
+    --tridactyl-font-family: "Comic Code Ligatures", monospace;
+    --tridactyl-font-family-sans: "Comic Code Ligatures", sans-serif;
+    --tridactyl-bg: var(--duskfox-bg1);
+    --tridactyl-fg: var(--duskfox-fg1);
+
+    /* command line and completions */
+    --tridactyl-cmdl-bg: var(--duskfox-bg0);
+    --tridactyl-cmdl-fg: var(--duskfox-fg1);
+    --tridactyl-cmplt-bg: var(--duskfox-bg1);
+    --tridactyl-cmplt-fg: var(--duskfox-fg1);
+    --tridactyl-cmplt-border-top: 1px solid var(--duskfox-bg4);
+    --tridactyl-header-first-bg: var(--duskfox-bg2);
+    --tridactyl-header-second-bg: var(--duskfox-bg2);
+    --tridactyl-header-third-bg: var(--duskfox-bg2);
+    --tridactyl-of-bg: var(--duskfox-sel1);
+    --tridactyl-of-fg: var(--duskfox-fg1);
+    --tridactyl-url-fg: var(--duskfox-magenta);
+    --tridactyl-status-bg: var(--duskfox-bg0);
+    --tridactyl-status-fg: var(--duskfox-fg1);
+
+    /* link hint labels: magenta like the focused sketchybar workspace, yellow for the selected one */
+    --tridactyl-hintspan-fg: var(--duskfox-bg0);
+    --tridactyl-hintspan-bg: var(--duskfox-magenta);
+    --tridactyl-hintspan-border-color: var(--duskfox-bg0);
+    --tridactyl-hintspan-border-width: 1px;
+    --tridactyl-hint-active-fg: var(--duskfox-bg0);
+    --tridactyl-hint-active-bg: var(--duskfox-yellow);
+}
