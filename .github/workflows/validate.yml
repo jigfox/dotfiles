@@ -1,0 +1,18 @@
+name: validate
+
+# the check Renovate waits for before it automerges
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  renovate-config:
+    name: renovate config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: npx --yes --package renovate renovate-config-validator --strict
