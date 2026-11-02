@@ -1,0 +1,75 @@
+/* Zen browser UI in duskfox (nightfox.nvim), same palette as nvim, Ghostty and sketchybar.
+ * Shared by all Zen profiles, the accent color differs per profile.
+ * Variable names from Zen's zen-theme.css; !important also beats the workspace gradient,
+ * which Zen sets as inline style. */
+
+:root {
+  --duskfox-bg0: #191726;
+  --duskfox-bg1: #232136;
+  --duskfox-bg2: #2d2a45;
+  --duskfox-bg3: #373354;
+  --duskfox-bg4: #4b4673;
+  --duskfox-sel1: #63577d;
+  --duskfox-fg0: #eae8ff;
+  --duskfox-fg1: #e0def4;
+  --duskfox-fg3: #6e6a86;
+  --profile-accent: {{ .accent }};
+
+  --zen-primary-color: var(--profile-accent) !important;
+  --zen-branding-bg: var(--duskfox-bg1) !important;
+  --zen-main-browser-background: var(--duskfox-bg0) !important;
+  --zen-main-browser-background-toolbar: var(--duskfox-bg0) !important;
+  --zen-themed-toolbar-bg-transparent: var(--duskfox-bg0) !important;
+  --zen-colors-primary: var(--duskfox-bg3) !important;
+  --zen-colors-secondary: var(--duskfox-bg2) !important;
+  --zen-colors-tertiary: var(--duskfox-bg1) !important;
+  --zen-colors-hover-bg: var(--duskfox-bg3) !important;
+  --zen-colors-primary-foreground: var(--duskfox-fg1) !important;
+  --zen-colors-border: var(--duskfox-bg4) !important;
+  --zen-colors-input-bg: var(--duskfox-bg1) !important;
+  --zen-urlbar-background: var(--duskfox-bg1) !important;
+  --zen-dialog-background: var(--duskfox-bg1) !important;
+
+  --toolbox-textcolor: var(--duskfox-fg1) !important;
+  --toolbar-color-scheme: dark !important;
+  --toolbar-bgcolor: var(--duskfox-bg0) !important;
+  --toolbar-color: var(--duskfox-fg1) !important;
+  --toolbar-field-background-color: var(--duskfox-bg1) !important;
+  --toolbar-field-focus-background-color: var(--duskfox-bg2) !important;
+  --toolbar-field-color: var(--duskfox-fg1) !important;
+  --toolbar-field-focus-color: var(--duskfox-fg0) !important;
+  --toolbar-field-focus-border-color: var(--profile-accent) !important;
+  --focus-outline-color: var(--profile-accent) !important;
+
+  --arrowpanel-background: var(--duskfox-bg1) !important;
+  --arrowpanel-color: var(--duskfox-fg1) !important;
+  --arrowpanel-border-color: var(--duskfox-bg4) !important;
+  --panel-separator-color: var(--duskfox-bg4) !important;
+  --urlbarView-highlight-background: var(--duskfox-sel1) !important;
+  --urlbarView-highlight-color: var(--duskfox-fg0) !important;
+
+  --tab-selected-bgcolor: var(--duskfox-bg3) !important;
+  --tab-selected-textcolor: var(--duskfox-fg0) !important;
+  --sidebar-background-color: var(--duskfox-bg0) !important;
+  --sidebar-text-color: var(--duskfox-fg1) !important;
+}
+
+/* same font as Ghostty and sketchybar */
+:root,
+#urlbar-input,
+.tab-label,
+menupopup,
+panel {
+  font-family: "Comic Code Ligatures", monospace !important;
+}
+
+/* the profile accent on the selected tab, to see at a glance which profile this window is */
+.tabbrowser-tab[selected] .tab-background {
+  box-shadow: inset 3px 0 0 var(--profile-accent) !important;
+}
+
+/* text selection like nvim's visual mode */
+::selection {
+  background-color: var(--duskfox-sel1) !important;
+  color: var(--duskfox-fg0) !important;
+}

@@ -1,0 +1,47 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Register the Zen profiles whose files chezmoi manages (Profiles/<name>, fixed folder names)
+# in profiles.ini and make the first one the default profile of this Zen install.
+set -euo pipefail
+
+ZEN=/Applications/Zen.app/Contents/MacOS/zen
+ZEN_DIR="$HOME/Library/Application Support/zen"
+INI="$ZEN_DIR/profiles.ini"
+PROFILES=({{ if .work }}inovex customer {{ end }}{{ if .personal }}private{{ end }})
+
+[ -x "$ZEN" ] || exit 0
+if pgrep -xq zen; then
+  echo "Zen is running, skipping profile setup (quit Zen and run chezmoi apply again)" >&2
+  exit 1
+fi
+
+for name in "${PROFILES[@]}"; do
+  if ! grep -qx "Name=$name" "$INI" 2>/dev/null; then
+    "$ZEN" --headless -CreateProfile "$name $ZEN_DIR/Profiles/$name"
+    echo "created Zen profile $name"
+  fi
+done
+
+# The install's default lives in an [Install<hash of the app path>] section, which Zen only
+# writes on its first start, creating and selecting a new "Default (release)" profile.
+# Let that happen, then remove that (empty) profile again.
+if ! grep -q '^\[Install' "$INI"; then
+  tmp=$(mktemp -d)
+  "$ZEN" --headless --screenshot "$tmp/zen.png" about:blank >/dev/null 2>&1 || true
+  rm -rf "$tmp"
+  created=$(sed -n '/^\[Install/,/^$/ s/^Default=//p' "$INI" | head -n1)
+  case $created in
+    Profiles/*.Default\ \(release\))
+      awk -v path="Path=$created" '
+        BEGIN { RS = ""; ORS = "\n\n" }
+        index($0, path) == 0' "$INI" >"$INI.tmp" && mv "$INI.tmp" "$INI"
+      rm -rf "${ZEN_DIR:?}/$created"
+      echo "removed Zen's auto-created profile $created"
+      ;;
+  esac
+fi
+
+sed -i '' "/^\[Install/,/^$/ s|^Default=.*|Default=Profiles/${PROFILES[0]}|" "$INI"
+# installs.ini has only install sections
+[ ! -f "$ZEN_DIR/installs.ini" ] || sed -i '' "s|^Default=.*|Default=Profiles/${PROFILES[0]}|" "$ZEN_DIR/installs.ini"
+{{ end -}}

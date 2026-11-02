@@ -1,0 +1,10 @@
+" Tridactyl config, loaded by every Zen profile on start
+" (needs the native messenger, see .chezmoiexternal.toml and NativeMessagingHosts/tridactyl.json)
+
+" link hints (f): only show the key labels, don't recolor or outline the page
+set hintstyles.fg none
+set hintstyles.bg none
+set hintstyles.outline none
+
+" duskfox, like nvim, Ghostty, sketchybar and the Zen UI (themes/duskfox.css)
+colourscheme duskfox

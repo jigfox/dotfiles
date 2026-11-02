@@ -14,3 +14,11 @@ checksum.sha256 = "0924fd8630c027f644280951c87c17012a724931893dbdf6cb6a2dc96e598
 type = "file"
 url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.12/sketchybar-app-font.ttf"
 checksum.sha256 = "3461f96bcb05c0fb1c3c42abfb14f6f85a0fcbc3e1dd9a713689e29aa41a410d"
+
+# Tridactyl native messenger (lets Tridactyl in Zen read ~/.config/tridactyl/tridactylrc),
+# the version Tridactyl expects (native/current_native_version), manifest in NativeMessagingHosts
+[".local/share/tridactyl/native_main"]
+type = "file"
+url = "https://github.com/tridactyl/native_messenger/releases/download/0.5.0/native_main-macOS"
+checksum.sha256 = "5382f8fcfdf41ccee561548602cf751f6c5f303c185730367c9e799085655921"
+executable = true

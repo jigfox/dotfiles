@@ -1,0 +1,20 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Zen enterprise policies (read from its macOS defaults domain), apply to all profiles:
+# install these extensions from addons.mozilla.org, they stay updated by Zen.
+set -euo pipefail
+
+# <extension id> <addons.mozilla.org slug>
+EXTENSIONS=(
+  "tridactyl.vim@cmcaine.co.uk tridactyl-vim"                         # vim keybindings
+  "password-manager-firefox-extension@apple.com icloud-passwords"     # iCloud Passwords
+  "uBlock0@raymondhill.net ublock-origin"                             # ad and tracker blocker
+)
+
+defaults write app.zen-browser.zen EnterprisePoliciesEnabled -bool true
+for extension in "${EXTENSIONS[@]}"; do
+  read -r id slug <<<"$extension"
+  defaults write app.zen-browser.zen ExtensionSettings -dict-add "$id" \
+    "{ installation_mode = \"normal_installed\"; install_url = \"https://addons.mozilla.org/firefox/downloads/latest/$slug/latest.xpi\"; }"
+done
+{{ end -}}

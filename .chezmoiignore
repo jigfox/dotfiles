@@ -4,6 +4,18 @@ private_Library
 .config/aerospace
 .config/sketchybar
 Library/Fonts/sketchybar-app-font.ttf
+Library/Application Support/zen
+Library/Application Support/Mozilla
+.local/share/tridactyl
+{{ end }}
+
+# Zen browser profiles: inovex and customer for work, private for personal
+{{ if not .work }}
+Library/Application Support/zen/Profiles/inovex
+Library/Application Support/zen/Profiles/customer
+{{ end }}
+{{ if not .personal }}
+Library/Application Support/zen/Profiles/private
 {{ end }}
 
 # ignore setup scripts
