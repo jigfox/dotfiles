@@ -5,6 +5,11 @@
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
 after-startup-command = []
 
+# Notify sketchybar about workspace changes, see ~/.config/sketchybar/plugins/aerospace.sh
+exec-on-workspace-change = ['/bin/bash', '-c',
+    '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+]
+
 # Start AeroSpace at login
 start-at-login = true
 
@@ -31,7 +36,11 @@ default-root-container-orientation = 'auto'
 # See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
 # Fallback value (if you omit the key): on-focused-monitor-changed = []
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
-on-focus-changed = ['move-mouse window-lazy-center']
+on-focus-changed = [
+    'move-mouse window-lazy-center',
+    # update the window list in sketchybar, see ~/.config/sketchybar/plugins/aerospace.sh
+    'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change',
+]
 
 # You can effectively turn off macOS "Hide application" (cmd-h) feature by toggling this flag
 # Useful if you don't use this macOS feature, but accidentally hit cmd-h or cmd-alt-h key
@@ -56,7 +65,8 @@ automatically-unhide-macos-hidden-apps = false
     inner.vertical =   5
     outer.left =       5
     outer.bottom =     5
-    outer.top =        5
+    # sketchybar height (32) + 5 gap; the notched built-in display already reserves the notch strip
+    outer.top =        [{ monitor.built-in = 5 }, 37]
     outer.right =      5
 
 [workspace-to-monitor-force-assignment]

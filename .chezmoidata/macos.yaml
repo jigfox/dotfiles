@@ -6,3 +6,8 @@ macos:
       type: bool
       value: false
       restart: Dock
+    # auto-hide the menu bar, sketchybar takes its place
+    - domain: NSGlobalDomain
+      key: _HIDE_MENU_BAR
+      type: bool
+      value: true

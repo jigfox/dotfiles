@@ -1,0 +1,73 @@
+#!/bin/bash
+# sketchybar with duskfox colors and aerospace workspaces
+
+source "$CONFIG_DIR/colors.sh"
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+
+FONT="Comic Code Ligatures"
+ICON_FONT="Symbols Nerd Font Mono"
+
+sketchybar --bar position=top height=32 color=$BG0 border_color=$BG4 border_width=0 \
+  margin=0 padding_left=8 padding_right=40 shadow=off topmost=off # right: room for the mic/camera indicator
+
+sketchybar --default \
+  icon.font="$ICON_FONT:Regular:15.0" icon.color=$FG1 \
+  label.font="$FONT:Bold:13.0" label.color=$FG1 \
+  padding_left=4 padding_right=4 \
+  icon.padding_left=6 icon.padding_right=4 \
+  label.padding_left=4 label.padding_right=6 \
+  background.color=$BG2 background.corner_radius=6 background.height=24
+
+# aerospace workspaces and windows, see plugins/aerospace.sh. aerospace.toml triggers
+# aerospace_workspace_change (exec-on-workspace-change) and aerospace_focus_change (on-focus-changed)
+sketchybar --add event aerospace_workspace_change --add event aerospace_focus_change
+
+# static workspace number items; the per-app items and brackets are created by aerospace.sh
+for sid in $(aerospace list-workspaces --all); do
+  sketchybar --add item "space.$sid" left \
+    --set "space.$sid" icon="$sid" icon.font="$FONT:Bold:13.0" icon.y_offset=1 \
+    icon.padding_left=8 icon.padding_right=3 label.drawing=off background.drawing=off \
+    padding_left=6 padding_right=0 \
+    click_script="aerospace workspace $sid"
+done
+
+sketchybar --add item aerospace left \
+  --set aerospace drawing=off updates=on script="$PLUGIN_DIR/aerospace.sh" \
+  --subscribe aerospace aerospace_workspace_change aerospace_focus_change front_app_switched \
+  space_windows_change display_change system_woke
+
+sketchybar --add item clock right \
+  --set clock icon=󰃰 icon.color=$BLUE update_freq=10 script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item battery right \
+  --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
+  --subscribe battery power_source_change system_woke
+
+# volume: scroll to change, click for slider and output/input device selection
+sketchybar --add item volume right \
+  --set volume icon.color=$CYAN script="$PLUGIN_DIR/volume.sh" \
+  popup.align=right popup.background.color=$BG1 popup.background.border_color=$BG4 \
+  popup.background.border_width=1 popup.background.corner_radius=8 \
+  --subscribe volume volume_change mouse.scrolled mouse.clicked mouse.exited.global \
+  --add slider volume.slider popup.volume 220 \
+  --set volume.slider icon.drawing=off label.drawing=off background.drawing=off \
+  slider.highlight_color=$CYAN slider.background.height=6 slider.background.corner_radius=3 \
+  slider.background.color=$BG3 slider.knob=󰝥 slider.knob.font="$ICON_FONT:Regular:14.0" slider.knob.color=$FG0 \
+  script='osascript -e "set volume output volume $PERCENTAGE"' \
+  --subscribe volume.slider mouse.clicked
+
+# Push Mic Control status, pushed by helpers/mic_watch (CoreAudio listener)
+sketchybar --add event mic_change
+sketchybar --add item mic right \
+  --set mic label.drawing=off icon.padding_left=8 icon.padding_right=8 script="$PLUGIN_DIR/mic.sh" \
+  --subscribe mic mic_change
+
+sketchybar --update
+
+MIC_WATCH="$HOME/.cache/sketchybar/mic_watch"
+if [ "$CONFIG_DIR/helpers/mic_watch.swift" -nt "$MIC_WATCH" ]; then
+  mkdir -p "$(dirname "$MIC_WATCH")"
+  swiftc -O "$CONFIG_DIR/helpers/mic_watch.swift" -o "$MIC_WATCH"
+fi
+pkill -x mic_watch
+"$MIC_WATCH" &
