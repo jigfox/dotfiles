@@ -3,3 +3,14 @@ type = "git-repo"
 url = "https://github.com/jigfox/neovim.git"
 refreshPeriod = "168h"
 clone.args = ["--config", "remote.origin.pushurl=git@github.com:jigfox/neovim.git"]
+
+# app icons for sketchybar, font and name -> glyph map from the same release
+[".config/sketchybar/icon_map.sh"]
+type = "file"
+url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.12/icon_map.sh"
+checksum.sha256 = "0924fd8630c027f644280951c87c17012a724931893dbdf6cb6a2dc96e59847e"
+
+["Library/Fonts/sketchybar-app-font.ttf"]
+type = "file"
+url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.12/sketchybar-app-font.ttf"
+checksum.sha256 = "3461f96bcb05c0fb1c3c42abfb14f6f85a0fcbc3e1dd9a713689e29aa41a410d"

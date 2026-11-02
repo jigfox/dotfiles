@@ -1,6 +1,9 @@
 # Ignore the Mac library folder on Linux
 {{ if ne .chezmoi.os "darwin" }}
 private_Library
+.config/aerospace
+.config/sketchybar
+Library/Fonts/sketchybar-app-font.ttf
 {{ end }}
 
 # ignore setup scripts
