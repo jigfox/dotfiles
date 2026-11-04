@@ -1,0 +1,30 @@
+/* Web page styles managed by chezmoi (shared by all Zen profiles).
+ * regexp() has to match the whole URL, backslashes are escaped as in a JS string. */
+
+/* GitLab (gitlab.com and gitlab.<name>.de / .com): code in Comic Code, like nvim and Ghostty.
+ * Leaves the Web IDE (Monaco) alone, it measures its own font for the cursor. */
+@-moz-document regexp("https://gitlab\\.([^./]*\\.)?(de|com)(/.*)?") {
+  :root {
+    --default-mono-font: "Comic Code Ligatures" !important;
+  }
+
+  pre, code, kbd, samp,
+  .code, .code *,
+  .blob-content, .line_content, .diff-line-num,
+  .md pre, .md code {
+    font-family: "Comic Code Ligatures", monospace !important;
+  }
+}
+
+/* GitHub: same for code. Primer takes every monospace font from --fontStack-monospace,
+ * including the invisible textarea over the code view, so selection stays aligned. */
+@-moz-document domain("github.com") {
+  :root, [data-color-mode] {
+    --fontStack-monospace: "Comic Code Ligatures", monospace !important;
+  }
+
+  pre, code, kbd, samp, tt,
+  .blob-code, .blob-code-inner, .react-code-text, .markdown-body pre, .markdown-body code {
+    font-family: "Comic Code Ligatures", monospace !important;
+  }
+}
