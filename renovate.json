@@ -23,6 +23,22 @@
       "matchUpdateTypes": ["minor", "patch"],
       "minimumReleaseAge": "3 days",
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "chezmoi externals are reviewed: the checksum commit comes from the validate workflow, which GitHub doesn't run checks for again",
+      "matchManagers": ["custom.regex"],
+      "automerge": false
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "GitHub release downloads pinned in .chezmoiexternal.toml, checksums are fixed by the validate workflow",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.chezmoiexternal\\.toml$/"],
+      "matchStrings": [
+        "url = \"https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>[^/]+)/"
+      ],
+      "datasourceTemplate": "github-releases"
     }
   ]
 }
