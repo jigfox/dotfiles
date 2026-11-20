@@ -16,6 +16,21 @@ relative_symlinks = true
 [tools]
 node = "lts"
 java = "zulu"
+# CLI tools with prebuilt binaries; Homebrew only keeps what bootstrap needs
+# before its tools step, what GUI apps call, and what mise can't install
+delta = "0.21.1"
+difftastic = "0.72.0"
+fd = "10.5.2"
+fzf = "0.75.0"
+herdr = "0.9.5"
+jq = "1.8.2"
+lazygit = "0.66.3"
+neovim = "0.12.6"
+ripgrep = "15.2.0"
+sops = "3.13.3"
+starship = "1.27.0"
+yq = "4.54.3"
+zoxide = "0.10.0"
 
 [env]
 MISE_EXPERIMENTAL = "1"
@@ -42,30 +57,23 @@ GIT_EMAIL_HOMELAB = "GIT_EMAIL_HOMELAB"
 # --- packages -----------------------------------------------------------------
 
 [bootstrap.packages]
+# needed before the tools step: age and fnox by the hooks and the `fnox exec`
+# around bootstrap, mas by the mas: packages below
 "brew:age" = "latest"
-"brew:eza" = "latest"
-"brew:difftastic" = "latest"
-"brew:fd" = "latest"
-"brew:fish" = "latest"
 "brew:fnox" = "latest"
-"brew:fzf" = "latest"
-"brew:git" = "latest"
-"brew:git-delta" = "latest"
-"brew:git-lfs" = "latest"
-"brew:herdr" = "latest"
-"brew:jq" = "latest"
-"brew:krew" = "latest"
-"brew:lazygit" = "latest"
 "brew:mas" = "latest"
+# login shell, needs a stable path in /etc/shells
+"brew:fish" = "latest"
+# git and git-lfs are also called by GUI apps, which don't see mise's PATH
+"brew:git" = "latest"
+"brew:git-lfs" = "latest"
+# no macOS binaries for mise
+"brew:eza" = "latest"
+# installs the kubectl-krew plugin name kubectl looks for, mise only `krew`
+"brew:krew" = "latest"
 "brew:moreutils" = "latest"
-"brew:neovim" = "latest"
-"brew:ripgrep" = "latest"
-"brew:sops" = "latest"
 "brew:sshpass" = "latest"
-"brew:starship" = "latest"
 "brew:switchaudio-osx" = "latest"
-"brew:yq" = "latest"
-"brew:zoxide" = "latest"
 # App Store apps install only if this Apple ID has downloaded them before
 "mas:1643649331" = "latest" # OpenIn
 "mas:1451685025" = "latest" # WireGuard
