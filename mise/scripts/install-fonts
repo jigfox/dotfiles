@@ -1,0 +1,32 @@
+#!/bin/bash
+# Comic Code is licensed, so the fonts are age blobs in secrets/fonts, decrypted
+# with the fnox key into ~/Library/Fonts. Runs again when a blob changes or a
+# font is missing; the font cache is refreshed afterwards.
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+is_macos || exit 0
+shopt -s nullglob
+blobs=("$repo_root"/secrets/fonts/*.otf.age)
+[ ${#blobs[@]} -gt 0 ] || exit 0
+
+hash="$(shasum -a 256 "${blobs[@]}" | sha256_stdin)"
+missing=0
+for blob in "${blobs[@]}"; do
+    [ -f "$HOME/Library/Fonts/$(basename "${blob%.age}")" ] || missing=1
+done
+if [ "$missing" = 0 ] && unchanged install-fonts "$hash"; then
+    exit 0
+fi
+
+mkdir -p "$HOME/Library/Fonts"
+for blob in "${blobs[@]}"; do
+    out="$HOME/Library/Fonts/$(basename "${blob%.age}")"
+    tmp="$(mktemp "$out.XXXXXX")"
+    age --decrypt -i "$age_key" -o "$tmp" "$blob"
+    chmod 644 "$tmp"
+    mv "$tmp" "$out"
+done
+echo "Fonts updated. Refreshing cache..."
+atsutil databases -removeUser
+record install-fonts "$hash"

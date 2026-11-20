@@ -1,0 +1,4 @@
+/* accent of the customer profile, imported by userChrome.css */
+:root {
+  --profile-accent: #f6c177;
+}

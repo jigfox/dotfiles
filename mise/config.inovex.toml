@@ -1,0 +1,20 @@
+# Environment "inovex": the company laptop.
+# Select it in ~/.config/mise/miserc.local.toml: env = ["inovex", ...]
+
+[bootstrap.secrets]
+INOVEX_GIT_EMAIL = "INOVEX_GIT_EMAIL"
+INOVEX_GITLAB_HOST = "INOVEX_GITLAB_HOST"
+
+[bootstrap.packages]
+"mas:803453959" = "latest" # Slack
+
+[dotfiles]
+# git identity: the include is in ~/.gitconfig, it lists the company's GitLab
+"~/.config/git/env-inovex.inc" = { source = "../templates/git/env-inovex.inc.tera", mode = "template" }
+"~/.config/git/inovex.gitconfig" = { source = "../templates/git/inovex.gitconfig.tera", mode = "template" }
+
+# Zen profile "inovex" (accent #569fba)
+"~/Library/Application Support/zen/Profiles/inovex/user.js" = { source = "../home/zen/user.js", variants = [{ os = "macos" }] }
+"~/Library/Application Support/zen/Profiles/inovex/chrome/userChrome.css" = { source = "../home/zen/userChrome.css", variants = [{ os = "macos" }] }
+"~/Library/Application Support/zen/Profiles/inovex/chrome/userContent.css" = { source = "../home/zen/userContent.css", variants = [{ os = "macos" }] }
+"~/Library/Application Support/zen/Profiles/inovex/chrome/accent.css" = { source = "../home/zen/accent-inovex.css", variants = [{ os = "macos" }] }

@@ -1,0 +1,18 @@
+#!/bin/bash
+# pre-packages hook: Homebrew itself, only when `brew` is missing
+# (the packages are installed by mise, but fish and the shell setup use brew's prefix)
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+is_macos || exit 0
+if command -v brew &>/dev/null || load_brew; then
+    echo "Homebrew already installed."
+    exit 0
+fi
+
+echo "Homebrew not found. Installing..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+load_brew || {
+    echo "Homebrew installation failed." >&2
+    exit 1
+}

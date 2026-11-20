@@ -1,0 +1,20 @@
+#!/bin/bash
+# pre-packages hook (and `mise run apply`): link the repo's fnox config in as
+# fnox's global config. fnox only accepts [files] there, and it must exist
+# before `fnox exec -- mise bootstrap` can read any secret.
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+src="$repo_root/home/config/fnox/config.toml"
+dest="${XDG_CONFIG_HOME:-$HOME/.config}/fnox/config.toml"
+
+if [ -L "$dest" ] && [ "$(readlink -f "$dest")" = "$(readlink -f "$src")" ]; then
+    exit 0
+fi
+if [ -e "$dest" ] || [ -L "$dest" ]; then
+    echo "$dest exists and is not the repo's fnox config, move it away first." >&2
+    exit 1
+fi
+mkdir -p "$(dirname "$dest")"
+ln -s "$src" "$dest"
+echo "linked $dest -> $src"

@@ -1,0 +1,169 @@
+{%- set excluded = secret(name="CUSTOMER_A_SELF_APPROVAL_EXCLUDED") | split(pat=",") -%}
+{% raw %}[tools]
+kubectl = "1.33.5"
+kafkactl = "5.14.0"
+sops = "3.11.0"
+node = "lts"
+java = "zulu-23"
+kotlin = "2.2.21"
+gradle = "latest"
+awscli = "latest"
+opentofu = "1.10.7"
+terraform = "1.14.0"
+helm = "3.17.0"
+"npm:pnpm" = "latest"
+fnox = "latest"
+python = "latest"
+uv = "latest"
+azure = "latest"
+"aqua:containers/kubernetes-mcp-server" = "0.0.69"
+
+[env]
+
+MISE_EXPERIMENTAL = 1
+KUBECONFIG = { value = "{{config_root}}/kubeconfig" }
+KAFKA_CTL_CONFIG = { value = "{{config_root}}/kafkactl.yml" }
+AWS_CONFIG_FILE = { value = "{{config_root}}/.aws/config" }
+AWS_SHARED_CREDENTIALS_FILE = { value = "{{config_root}}/.aws/credentials" }
+NPM_CONFIG_USERCONFIG = { value = "{{config_root}}/.npmrc" }
+GLAB_CONFIG_DIR = { value = "{{config_root}}/.glab-cli" }
+GITLAB_HOST = "{% endraw %}{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}{% raw %}"
+GITLAB_USER = "{% endraw %}{{ secret(name="CUSTOMER_A_GITLAB_USER") }}{% raw %}"
+GIT_SSH_COMMAND = { value = "ssh -F {{config_root}}/.ssh/config" }
+CLAUDE_CONFIG_DIR = { value = "{{config_root}}/.claude" }
+CODEX_HOME = { value = "{{config_root}}/.codex" }
+GRADLE_USER_HOME = { value = "{{config_root}}/.gradle" }
+DOCKER_CONFIG = { value = "{{config_root}}/.docker" }
+# the Colima VM that ~/.config/mise/scripts/colima-agent starts for this root
+DOCKER_HOST = { value = "unix://{{env.HOME}}/.config/colima/agent-{{config_root | basename | replace(from='.', to='-')}}/docker.sock" }
+TESTCONTAINERS_RYUK_DISABLED = true
+# GIT_SSH_COMMAND = "ssh - ~/.ssh/{% endraw %}{{ secret(name="CUSTOMER_A_SSH_KEY") }}{% raw %} -o 'IdentitiesOnly yes'"
+
+[hooks.enter]
+shell = "fish"
+script = '''
+fnox activate fish | source
+~/.config/mise/scripts/colima-agent enter {{config_root}} $fish_pid
+'''
+
+[hooks.leave]
+shell = "fish"
+script = "~/.config/mise/scripts/colima-agent leave {{config_root}} $fish_pid"
+
+[shell_alias]
+# claude = "exec -- bash -c 'exec -a claude nono run --profile {% endraw %}{{ secret(name="CUSTOMER_A_NONO_PROFILE_WORK") }}{% raw %} --allow-cwd --write \"$1\" --write \"$2\" -- env -u MFA_TOKEN claude \"${@:3}\"' _ \"$GRADLE_USER_HOME\" \"$CLAUDE_CONFIG_DIR\""
+# claude = "exec -a claude nono run --profile {% endraw %}{{ secret(name="CUSTOMER_A_NONO_PROFILE_WORK") }}{% raw %} --allow-cwd --write $GRADLE_USER_HOME --write $CLAUDE_CONFIG_DIR -- env -u MFA_TOKEN claude"
+claude = "mise run claude"
+codex = "mise run codex"
+
+[tasks.claude]
+description = "Run Claude in the work sandbox"
+run = '''
+#!/usr/bin/env bash
+exec ~/.config/mise/scripts/nono-agent {% endraw %}{{ secret(name="CUSTOMER_A_NONO_PROFILE_WORK") }}{% raw %} claude --write "$GRADLE_USER_HOME" --write "$CLAUDE_CONFIG_DIR" \
+  --mcp kubernetes "kubernetes-mcp-server --config $HOME/.config/work/kubernetes-mcp.toml" -- "$@"
+'''
+
+[tasks.codex]
+description = "Run Codex in the work sandbox"
+run = '''
+#!/usr/bin/env bash
+exec ~/.config/mise/scripts/nono-agent {% endraw %}{{ secret(name="CUSTOMER_A_NONO_PROFILE_WORK") }}{% raw %} codex --write "$GRADLE_USER_HOME" --write "$CODEX_HOME" \
+  --mcp kubernetes "kubernetes-mcp-server --config $HOME/.config/work/kubernetes-mcp.toml" -- "$@"
+'''
+
+[tasks.cma-allow-self-approval]
+alias = "self-approve"
+description = "Allow MR authors to approve their own MRs in {% endraw %}{{ secret(name="CUSTOMER_A_SELF_APPROVAL_GROUP") }}{% raw %} (excluding {% endraw %}{{ excluded[0] }}{% raw %}/ and {% endraw %}{{ excluded[1] }}{% raw %}/). Re-run after every GPM deploy, which resets it."
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="{% endraw %}{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}{% raw %}"
+GROUP="{% endraw %}{{ secret(name="CUSTOMER_A_SELF_APPROVAL_GROUP") }}{% raw %}"
+GROUP_ENC="{% endraw %}{{ secret(name="CUSTOMER_A_SELF_APPROVAL_GROUP") | replace(from="/", to="%2F") }}{% raw %}"
+TAB=$(printf '\t')
+
+for bin in glab jq; do
+  command -v "$bin" >/dev/null || { echo "error: $bin is required" >&2; exit 1; }
+done
+
+glab auth status --hostname "$HOST" >/dev/null 2>&1 || {
+  echo "error: not logged in to $HOST - run: glab auth login --hostname $HOST" >&2
+  exit 1
+}
+
+raw=$(glab api --hostname "$HOST" --paginate \
+  "groups/$GROUP_ENC/projects?include_subgroups=true&with_shared=false&archived=false&per_page=100&simple=true" 2>&1) || true
+
+rows=$(printf '%s' "$raw" | jq -r --arg group "$GROUP" '
+    .[]
+    | .path_with_namespace as $p
+    # only projects inside the group itself - never ones merely shared with it
+    | select($p | startswith($group + "/"))
+    # the trailing slash matters: it excludes the {% endraw %}{{ excluded[0] }}{% raw %}/ and {% endraw %}{{ excluded[1] }}{% raw %}/ subgroups,
+    # not root-level projects such as {% endraw %}{{ excluded[0] }}{% raw %}-bff or gdpr-{% endraw %}{{ excluded[0] }}{% raw %}
+    | select($p | test("^\($group)/({% endraw %}{{ excluded | join(sep="|") }}{% raw %})/") | not)
+    | "\(.id)\t\($p)"
+  ' 2>/dev/null | sort -t"$TAB" -k2) || true
+
+if [ -z "$rows" ]; then
+  echo "error: could not list projects in $GROUP. glab replied:" >&2
+  printf '%s\n' "$raw" | head -n 5 >&2
+  exit 1
+fi
+
+read_setting() {
+  printf '%s' "$1" | jq -r '.merge_requests_author_approval | tostring' 2>/dev/null || echo unknown
+}
+
+oneline() {
+  printf '%s' "$1" | tr '\n' ' ' | cut -c1-140
+}
+
+changed=0; already=0; failed=0
+
+while IFS="$TAB" read -r id path; do
+  [ -n "${id:-}" ] || continue
+
+  if ! resp=$(glab api --hostname "$HOST" "projects/$id/approvals" 2>&1); then
+    printf 'FAILED   %s: %s\n' "$path" "$(oneline "$resp")"
+    failed=$((failed + 1)); continue
+  fi
+
+  case "$(read_setting "$resp")" in
+    true)
+      printf 'ok       %s\n' "$path"
+      already=$((already + 1)); continue ;;
+    false) ;;
+    *)
+      printf 'FAILED   %s: unexpected response: %s\n' "$path" "$(oneline "$resp")"
+      failed=$((failed + 1)); continue ;;
+  esac
+
+  if [ -n "${DRY_RUN:-}" ]; then
+    printf 'would    %s\n' "$path"
+    continue
+  fi
+
+  if ! resp=$(glab api --hostname "$HOST" --method POST "projects/$id/approvals" \
+      --field merge_requests_author_approval=true 2>&1); then
+    printf 'FAILED   %s: %s\n' "$path" "$(oneline "$resp")"
+    failed=$((failed + 1)); continue
+  fi
+
+  if [ "$(read_setting "$resp")" != "true" ]; then
+    printf 'FAILED   %s: setting did not stick - locked at group or instance level?\n' "$path"
+    failed=$((failed + 1)); continue
+  fi
+
+  printf 'changed  %s\n' "$path"
+  changed=$((changed + 1))
+done <<ROWS
+$rows
+ROWS
+
+printf '\n%d changed, %d already allowed, %d failed\n' "$changed" "$already" "$failed"
+[ "$failed" -eq 0 ]
+'''
+{% endraw %}

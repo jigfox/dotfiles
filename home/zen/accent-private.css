@@ -1,0 +1,4 @@
+/* accent of the private profile, imported by userChrome.css */
+:root {
+  --profile-accent: #c4a7e7;
+}

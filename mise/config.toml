@@ -1,0 +1,187 @@
+# Global mise config of every machine (~/.config/mise is a link to this
+# directory, see README). It is the base; the environments listed in
+# ~/.config/mise/miserc.local.toml (personal, inovex, customer-a, ...) add their
+# files config.<env>.toml on top.
+#
+# Sources of [dotfiles] are relative to this directory (hence the ../).
+# Secrets come from fnox (home/config/fnox/config.toml): run `mise run apply`.
+
+[settings]
+experimental = true
+
+[tools]
+node = "lts"
+java = "zulu"
+
+[env]
+MISE_EXPERIMENTAL = "1"
+
+# [prepare.npm]
+# auto = true
+#
+# [prepare.pnpm]
+# auto = true
+#
+# [prepare.yarn]
+# auto = true
+#
+# [prepare.go]
+# auto = true
+
+# --- secrets (names in fnox) ---------------------------------------------------
+
+[bootstrap.secrets]
+GIT_EMAIL_GITLAB = "GIT_EMAIL_GITLAB"
+GIT_EMAIL_GITHUB = "GIT_EMAIL_GITHUB"
+GIT_EMAIL_HOMELAB = "GIT_EMAIL_HOMELAB"
+
+# --- packages -----------------------------------------------------------------
+
+[bootstrap.packages]
+"brew:age" = "latest"
+"brew:eza" = "latest"
+"brew:difftastic" = "latest"
+"brew:fd" = "latest"
+"brew:fish" = "latest"
+"brew:fnox" = "latest"
+"brew:fzf" = "latest"
+"brew:git" = "latest"
+"brew:git-delta" = "latest"
+"brew:git-lfs" = "latest"
+"brew:herdr" = "latest"
+"brew:jq" = "latest"
+"brew:krew" = "latest"
+"brew:lazygit" = "latest"
+"brew:mas" = "latest"
+"brew:moreutils" = "latest"
+"brew:neovim" = "latest"
+"brew:ripgrep" = "latest"
+"brew:sops" = "latest"
+"brew:sshpass" = "latest"
+"brew:starship" = "latest"
+"brew:switchaudio-osx" = "latest"
+"brew:yq" = "latest"
+"brew:zoxide" = "latest"
+# App Store apps install only if this Apple ID has downloaded them before
+"mas:1643649331" = "latest" # OpenIn
+"mas:1451685025" = "latest" # WireGuard
+"brew-cask:kitty" = "latest"
+"brew-cask:zen" = "latest"
+"brew-cask:font-hack-nerd-font" = "latest"
+"brew-cask:font-symbols-only-nerd-font" = "latest"
+# aerospace (cask of the tap nikitabobko/tap) is installed by the post-packages hook:
+# mise needs Ruby 3 to read a tap cask that has no published metadata
+"brew:felixkratz/formulae/sketchybar" = "latest"
+
+# --- repositories -------------------------------------------------------------
+
+[bootstrap.repos]
+# cloned over https, the pushurl is set in the post-repos hook
+"~/.config/nvim" = { url = "https://github.com/jigfox/neovim.git" }
+
+# --- macOS --------------------------------------------------------------------
+
+# Mission Control: don't rearrange spaces based on most recent use
+[bootstrap.settings.macos.dock]
+mru_spaces = false
+
+# auto-hide the menu bar, sketchybar takes its place
+[bootstrap.settings.macos.defaults.NSGlobalDomain]
+_HIDE_MENU_BAR = true
+
+# Zen enterprise policies (read from its defaults domain), apply to all profiles:
+# install these extensions from addons.mozilla.org, they stay updated by Zen.
+# The whole ExtensionSettings dict is written, so list every extension.
+[bootstrap.settings.macos.defaults."app.zen-browser.zen"]
+EnterprisePoliciesEnabled = true
+
+# vim keybindings
+[bootstrap.settings.macos.defaults."app.zen-browser.zen".ExtensionSettings."tridactyl.vim@cmcaine.co.uk"]
+installation_mode = "normal_installed"
+install_url = "https://addons.mozilla.org/firefox/downloads/latest/tridactyl-vim/latest.xpi"
+
+# iCloud Passwords
+[bootstrap.settings.macos.defaults."app.zen-browser.zen".ExtensionSettings."password-manager-firefox-extension@apple.com"]
+installation_mode = "normal_installed"
+install_url = "https://addons.mozilla.org/firefox/downloads/latest/icloud-passwords/latest.xpi"
+
+# ad and tracker blocker
+[bootstrap.settings.macos.defaults."app.zen-browser.zen".ExtensionSettings."uBlock0@raymondhill.net"]
+installation_mode = "normal_installed"
+install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+
+# --- shell --------------------------------------------------------------------
+
+[bootstrap.user]
+login_shell = "fish"
+
+# Not [bootstrap.mise_shell_activate] fish = "auto": mise refuses to edit
+# config.fish because it is a link into home/config/fish. The same activation
+# (prompt: activate, scripts: shims) is home/config/fish/conf.d/10-mise.fish.
+
+# --- hooks and bootstrap task -------------------------------------------------
+
+# Hooks and the task run on every `mise bootstrap`; the scripts (mise/scripts)
+# do nothing when their inputs are unchanged, state in ~/.local/state/dotfiles.
+[bootstrap.hooks]
+pre-packages = [
+  "~/.config/mise/scripts/check-age-key",
+  "~/.config/mise/scripts/install-brew",
+  "~/.config/mise/scripts/link-fnox-config",
+]
+post-packages = "~/.config/mise/scripts/install-tap-casks"
+post-repos = "~/.config/mise/scripts/set-nvim-pushurl"
+post-dotfiles = "~/.config/mise/scripts/zen-profiles {% if mise_env is defined %}{{ mise_env | join(sep=' ') }}{% endif %}"
+post-defaults = "killall Dock || true"
+# IDEs look for JDKs where asdf kept them; the link needs mise's java, hence after the tools
+post-tools = "mkdir -p ~/.asdf/installs && ln -sfn ~/.local/share/mise/installs/java ~/.asdf/installs/java"
+
+[tasks.bootstrap]
+description = "Downloads, fonts and fish plugins, the steps bootstrap has no section for"
+run = [
+  "~/.config/mise/scripts/fetch-externals",
+  "~/.config/mise/scripts/install-fonts",
+  "~/.config/mise/scripts/fisher-update",
+]
+
+# --- dotfiles -----------------------------------------------------------------
+
+[dotfiles]
+# fnox itself (home/config/fnox/config.toml) is linked by the link-fnox-config hook
+"~/.ssh" = { permissions = "0700" }
+"~/.ssh/config" = { mode = "fnox", permissions = "0600" }
+"~/.ssh/id_ed25519" = { mode = "fnox", permissions = "0600" }
+"~/.ssh/id_ed25519.pub" = { source = "../home/ssh/id_ed25519.pub" }
+
+# git: ~/.gitconfig includes the identities of the environments
+"~/.gitconfig" = { source = "../templates/gitconfig.tera", mode = "template" }
+"~/.config/git/attributes" = { source = "../home/config/git/attributes" }
+"~/.config/git/ignore" = { source = "../home/config/git/ignore" }
+"~/.config/git/gitlab.gitconfig" = { source = "../templates/git/gitlab.gitconfig.tera", mode = "template" }
+"~/.config/git/github.gitconfig" = { source = "../templates/git/github.gitconfig.tera", mode = "template" }
+"~/.config/git/homelab.gitconfig" = { source = "../templates/git/homelab.gitconfig.tera", mode = "template" }
+
+# symlink-each: the programs also write into these directories (fisher, kitty,
+# herdr, ...), only the files of this repo are links
+"~/.config/fish" = { source = "../home/config/fish", mode = "symlink-each" }
+"~/.config/ghostty" = { source = "../home/config/ghostty", mode = "symlink-each" }
+"~/.config/herdr" = { source = "../home/config/herdr", mode = "symlink-each" }
+"~/.config/kitty" = { source = "../home/config/kitty", mode = "symlink-each" }
+"~/.config/pnpm" = { source = "../home/config/pnpm", mode = "symlink-each" }
+"~/.config/tridactyl" = { source = "../home/config/tridactyl", mode = "symlink-each" }
+"~/.config/starship.toml" = { source = "../home/config/starship.toml" }
+"~/.config/lazygit/config.yml" = { source = "../templates/lazygit.yml.tera", mode = "template" }
+
+# profiles of the work sandbox are linked next to these by the environments
+"~/.config/nono/profiles/n.json" = { source = "../home/config/nono/profiles/n.json" }
+"~/.config/nono/profiles/opencode.json" = { source = "../home/config/nono/profiles/opencode.json" }
+"~/.config/nono/profiles/opencode-ant.json" = { source = "../home/config/nono/profiles/opencode-ant.json" }
+"~/.config/nono/profiles/base.json" = { source = "../templates/nono/base.json.tera", mode = "template" }
+
+"~/.default-npm-packages" = { source = "../home/default-npm-packages" }
+"~/.editorconfig" = { source = "../home/editorconfig" }
+
+# macOS only
+"~/.config/aerospace" = { source = "../home/config/aerospace", mode = "symlink-each", variants = [{ os = "macos" }] }
+"~/.config/sketchybar" = { source = "../home/config/sketchybar", mode = "symlink-each", variants = [{ os = "macos" }] }
+"~/Library/Application Support/Mozilla/NativeMessagingHosts/tridactyl.json" = { source = "../templates/tridactyl-native.json.tera", mode = "template", variants = [{ os = "macos" }] }

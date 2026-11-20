@@ -1,7 +1,10 @@
 /* Zen browser UI in duskfox (nightfox.nvim), same palette as nvim, Ghostty and sketchybar.
- * Shared by all Zen profiles, the accent color differs per profile.
+ * Shared by all Zen profiles, the accent color differs per profile (accent.css,
+ * the profile's own file, sets --profile-accent).
  * Variable names from Zen's zen-theme.css; !important also beats the workspace gradient,
  * which Zen sets as inline style. */
+
+@import url("accent.css");
 
 :root {
   --duskfox-bg0: #191726;
@@ -13,7 +16,6 @@
   --duskfox-fg0: #eae8ff;
   --duskfox-fg1: #e0def4;
   --duskfox-fg3: #6e6a86;
-  --profile-accent: {{ .accent }};
 
   --zen-primary-color: var(--profile-accent) !important;
   --zen-branding-bg: var(--duskfox-bg1) !important;

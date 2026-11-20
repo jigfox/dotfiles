@@ -1,0 +1,15 @@
+#!/bin/bash
+# post-packages hook: casks from third-party taps. mise can only read such a
+# cask with Ruby 3 (no published metadata, macOS ships Ruby 2.6), so Homebrew
+# itself installs them.
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+is_macos || exit 0
+load_brew || { echo "brew not found, cannot install tap casks." >&2; exit 1; }
+
+for cask in nikitabobko/tap/aerospace; do
+    if ! brew list --cask "${cask##*/}" &>/dev/null; then
+        brew install --cask "$cask"
+    fi
+done
