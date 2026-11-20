@@ -3,9 +3,9 @@
 # Moves the divider in the given direction.
 # Usage: resize.sh left|down|up|right [--from-nvim]
 
-HERDR=/opt/homebrew/bin/herdr
-JQ=/opt/homebrew/bin/jq
-NVIM=/opt/homebrew/bin/nvim
+HERDR=$HOME/.local/share/mise/shims/herdr
+JQ=$HOME/.local/share/mise/shims/jq
+NVIM=$HOME/.local/share/mise/shims/nvim
 NVIM_RUN_DIR="$(getconf DARWIN_USER_TEMP_DIR)nvim.$(id -un)"
 
 dir=$1

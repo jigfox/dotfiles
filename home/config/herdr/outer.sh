@@ -2,7 +2,7 @@
 # Hand a navigation/resize off to the outer terminal (kitty or Ghostty) that is focused.
 # Usage: outer.sh nav|resize left|down|up|right
 
-JQ=/opt/homebrew/bin/jq
+JQ=$HOME/.local/share/mise/shims/jq
 KITTEN=/Applications/kitty.app/Contents/MacOS/kitten
 KITTY_SOCKET=unix:/tmp/mykitty
 

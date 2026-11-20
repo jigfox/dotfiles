@@ -2,8 +2,8 @@
 # Seamless ctrl+h/j/k/l navigation: nvim split -> herdr pane -> kitty window.
 # Usage: navigate.sh left|down|up|right [--from-nvim]
 
-HERDR=/opt/homebrew/bin/herdr
-JQ=/opt/homebrew/bin/jq
+HERDR=$HOME/.local/share/mise/shims/herdr
+JQ=$HOME/.local/share/mise/shims/jq
 
 dir=$1
 from_nvim=$2
