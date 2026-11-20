@@ -1,7 +1,0 @@
-{{- if .work -}}
-#!/bin/bash
-# Bundles keep file names, not only contents, out of the public repo
-# work-ssh hash: {{ include "secrets/work-ssh.tar.gz.age" | sha256sum }}
-set -euo pipefail
-"$CHEZMOI_EXECUTABLE" decrypt "{{ .chezmoi.sourceDir }}/secrets/work-ssh.tar.gz.age" | tar -xzf - -C "$HOME"
-{{ end -}}
