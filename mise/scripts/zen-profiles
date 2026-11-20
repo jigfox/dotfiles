@@ -24,16 +24,21 @@ ZEN_DIR="$HOME/Library/Application Support/zen"
 INI="$ZEN_DIR/profiles.ini"
 
 [ -x "$ZEN" ] || exit 0
+
+missing=()
+for name in "${PROFILES[@]}"; do
+    grep -qx "Name=$name" "$INI" 2>/dev/null || missing+=("$name")
+done
+[ ${#missing[@]} -gt 0 ] || exit 0
+
 if pgrep -xq zen; then
-    echo "Zen is running, skipping profile setup (quit Zen and run bootstrap again)" >&2
+    echo "Zen is running, can't create profiles ${missing[*]} (quit Zen and run bootstrap again)" >&2
     exit 1
 fi
 
-for name in "${PROFILES[@]}"; do
-    if ! grep -qx "Name=$name" "$INI" 2>/dev/null; then
-        "$ZEN" --headless -CreateProfile "$name $ZEN_DIR/Profiles/$name"
-        echo "created Zen profile $name"
-    fi
+for name in "${missing[@]}"; do
+    "$ZEN" --headless -CreateProfile "$name $ZEN_DIR/Profiles/$name"
+    echo "created Zen profile $name"
 done
 
 # The install's default lives in an [Install<hash of the app path>] section, which Zen only

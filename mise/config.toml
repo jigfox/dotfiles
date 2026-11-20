@@ -64,6 +64,8 @@ GIT_EMAIL_HOMELAB = "GIT_EMAIL_HOMELAB"
 "brew:age" = "latest"
 "brew:fnox" = "latest"
 "brew:mas" = "latest"
+# mise itself, so `mise bootstrap packages prune` keeps it
+"brew:mise" = "latest"
 # login shell, needs a stable path in /etc/shells
 "brew:fish" = "latest"
 # git and git-lfs are also called by GUI apps, which don't see mise's PATH
