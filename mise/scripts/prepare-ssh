@@ -1,0 +1,31 @@
+#!/bin/bash
+# pre-repos hook: private repos (a customer environment's) are cloned over ssh,
+# before the dotfiles step deploys the ssh files. On a new machine, write the
+# key and config from fnox early, and trust GitHub's host key after checking it
+# against the fingerprint GitHub publishes. A no-op once both are there.
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+# https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+github_ed25519="SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU"
+
+load_brew
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+
+for f in id_ed25519 config; do
+    if [ ! -e "$HOME/.ssh/$f" ]; then
+        (umask 077; "$HOMEBREW_PREFIX/bin/fnox" get --file "~/.ssh/$f" >"$HOME/.ssh/$f")
+        echo "wrote ~/.ssh/$f from fnox"
+    fi
+done
+
+if ! ssh-keygen -F github.com >/dev/null 2>&1; then
+    key="$(ssh-keyscan -t ed25519 github.com 2>/dev/null)"
+    if [ "$(printf '%s\n' "$key" | ssh-keygen -lf - | awk '{print $2}')" != "$github_ed25519" ]; then
+        echo "github.com's ed25519 host key does not match $github_ed25519" >&2
+        exit 1
+    fi
+    printf '%s\n' "$key" >>"$HOME/.ssh/known_hosts"
+    echo "trusted github.com's host key"
+fi

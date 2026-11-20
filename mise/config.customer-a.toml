@@ -1,28 +1,27 @@
-# Environment "customer-a": work for a customer. The customer's real name, hosts
-# and users are only in fnox (CUSTOMER_A_*), the repo is public. To add a
-# customer copy this file as config.customer-b.toml with its own CUSTOMER_B_*
-# secrets (README, "Adding a customer").
+# Environment "customer-a": work for a customer. The repo is public, so the
+# customer's files live in a private repo, cloned to
+# ~/.local/share/dotfiles-customer-a (URL: fnox secret CUSTOMER_A_REPO) and
+# linked into place by its own `setup` script. Only the files shared with the
+# other environments (git, lazygit, nono base profile) are templated here, with
+# the CUSTOMER_A_* fnox secrets. To add a customer see README, "Adding a customer".
 # Select it in ~/.config/mise/miserc.local.toml: env = ["customer-a", ...], or
 # under a local alias: env = ["acme"] and [env_sets] acme = ["customer-a"].
 
 [bootstrap.secrets]
 CUSTOMER_A_GIT_EMAIL = "CUSTOMER_A_GIT_EMAIL"
 CUSTOMER_A_GITLAB_HOST = "CUSTOMER_A_GITLAB_HOST"
-CUSTOMER_A_GITLAB_USER = "CUSTOMER_A_GITLAB_USER"
-CUSTOMER_A_SSH_KEY = "CUSTOMER_A_SSH_KEY"
-CUSTOMER_A_NONO_PROFILE_WORK = "CUSTOMER_A_NONO_PROFILE_WORK"
-CUSTOMER_A_NONO_PROFILE_CORE = "CUSTOMER_A_NONO_PROFILE_CORE"
-CUSTOMER_A_HOST_BACKSTAGE = "CUSTOMER_A_HOST_BACKSTAGE"
-CUSTOMER_A_HOST_MONITORING_MCP = "CUSTOMER_A_HOST_MONITORING_MCP"
-CUSTOMER_A_SELF_APPROVAL_GROUP = "CUSTOMER_A_SELF_APPROVAL_GROUP"
-CUSTOMER_A_SELF_APPROVAL_EXCLUDED = "CUSTOMER_A_SELF_APPROVAL_EXCLUDED"
+
+# the URL is a secret too; env, because repos can't read secret() (so the first,
+# secret-less pass runs with --skip repos)
+[bootstrap.repos]
+"~/.local/share/dotfiles-customer-a" = { url = "{{ env.CUSTOMER_A_REPO }}" }
 
 [bootstrap.packages]
 "brew:openconnect" = "latest"
 
-# the ssh bundle and the links under the customer's file names
+# work mise.toml, nono work profiles, ssh key: links into the private repo
 [bootstrap.hooks]
-post-dotfiles = "~/.config/mise/scripts/customer-a-setup"
+post-dotfiles = "~/.local/share/dotfiles-customer-a/setup"
 
 [dotfiles]
 # git identity
@@ -30,11 +29,7 @@ post-dotfiles = "~/.config/mise/scripts/customer-a-setup"
 "~/.config/git/customer-a.gitconfig" = { source = "../templates/git/customer-a.gitconfig.tera", mode = "template" }
 "~/.config/nvim-copilot-dirs" = { source = "../templates/nvim-copilot-dirs.tera", mode = "template" }
 
-# work sandbox (nono) and the mise.toml of the customer's source tree; the
-# customer-a-setup hook links them under the customer's names
-"~/.config/nono/work/work.json" = { source = "../templates/nono/work.json.tera", mode = "template" }
-"~/.config/nono/work/work-claude-core.json" = { source = "../templates/nono/work-claude-core.json.tera", mode = "template" }
-"~/.config/work/mise.toml" = { source = "../templates/work/mise.toml.tera", mode = "template" }
+# read-only Kubernetes MCP server of the work sandbox (nothing customer-specific)
 "~/.config/work/kubernetes-mcp.toml" = { source = "../home/config/work/kubernetes-mcp.toml" }
 
 # Zen profile "customer" (accent #f6c177)

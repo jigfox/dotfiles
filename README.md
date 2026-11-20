@@ -10,11 +10,11 @@ What a machine gets depends on the *environments* it selects. [mise/config.toml]
 | --- | --- |
 | `personal` | the Zen profile `private` |
 | `inovex` | the company git identity, Slack, the Zen profile `inovex` |
-| `customer-a` | everything for one customer: git identity, work sandbox and `mise.toml`, ssh keys, openconnect, the Zen profile `customer` |
+| `customer-a` | everything for one customer: git identity, openconnect, the Zen profile `customer`, and a private repo with the work sandbox, `mise.toml` and ssh key |
 
 A machine can select several. The selection is per machine, in `~/.config/mise/miserc.local.toml`, which is not in git. Each environment file declares the fnox secrets it needs under `[bootstrap.secrets]`, so a machine without `customer-a` never reads the customer's data.
 
-Neutral names (`customer-a`) are what is public. The real customer is only in the encrypted values, and a machine can give it a local alias (see step 2).
+Neutral names (`customer-a`) are what is public. The real customer is only in the encrypted values and in a private repo: bootstrap clones it (URL in the fnox secret `CUSTOMER_A_REPO`) to `~/.local/share/dotfiles-customer-a` and runs its `setup`, which links its files into place. A machine can give the environment a local alias (see step 2).
 
 ## Setup
 
@@ -50,16 +50,16 @@ The age key has to come first, because nothing secret can be decrypted without i
 4. **First pass, without secrets.** The checkout is cloned over https, so no Xcode command line tools are needed up front. This installs Homebrew, the packages (fnox included), the tools, the macOS settings and the login shell, links `~/.config/mise` to `mise/` of the checkout (`~/.local/share/mise/bootstrap-repo`) and fnox's config to `~/.config/fnox/config.toml`:
 
    ```sh
-   ~/.local/bin/mise -E personal,inovex,customer-a bootstrap --from https://github.com/jigfox/dotfiles.git --config-dir mise --skip dotfiles --save-env
+   ~/.local/bin/mise -E personal,inovex,customer-a bootstrap --from https://github.com/jigfox/dotfiles.git --config-dir mise --skip dotfiles,repos --save-env
    ```
 
-5. **Second pass, with secrets.** This deploys the dotfiles, including the templates and the files fnox holds (ssh keys), then runs the setup steps (downloads, fonts, fish plugins, Zen profiles):
+5. **Second pass, with secrets.** This clones the repos (neovim, and over ssh the private repos of customer environments: the `prepare-ssh` hook writes the ssh key from fnox first and checks GitHub's host key), deploys the dotfiles, including the templates and the files fnox holds (ssh keys), then runs the setup steps (downloads, fonts, fish plugins, Zen profiles):
 
    ```sh
    cd ~/.local/share/mise/bootstrap-repo && mise trust && mise run apply
    ```
 
-   `mise run apply` is `fnox exec -- mise bootstrap`. Afterwards switch the remote of the checkout to ssh: `git remote set-url origin git@github.com:jigfox/dotfiles.git`.
+   `mise run apply` is `fnox exec -- mise bootstrap --skip-dirty` (a checkout with local changes, like neovim's lock file, is left alone). Afterwards switch the remote of the checkout to ssh: `git remote set-url origin git@github.com:jigfox/dotfiles.git`.
 
 After setup:
 
@@ -90,14 +90,15 @@ fnox set --global --file ~/.ssh/config    # a file, deployed by a `mode = "fnox"
 fnox get NAME
 ```
 
-Fonts (Comic Code, licensed) and the customer-a ssh bundle are binary: they stay `.age` files in `secrets/`, encrypted to the same recipient (`age -e -a -r <recipient>`), and bootstrap steps decrypt them.
+Fonts (Comic Code, licensed) are binary: they stay `.age` files in `secrets/`, encrypted to the same recipient (`age -e -a -r <recipient>`), and bootstrap steps decrypt them.
 
 ### Adding a customer
 
-1. Copy `mise/config.customer-a.toml` to `mise/config.customer-b.toml` and give every secret a `CUSTOMER_B_` name. Keep the repo neutral: the real name, hosts and users only go into fnox.
-2. Store the values: `fnox set --global CUSTOMER_B_GITLAB_HOST` and so on, including `CUSTOMER_B_GIT_EMAIL`.
-3. Copy the templates the file refers to (`templates/git/customer-a.gitconfig.tera`, `templates/git/env-customer-a.inc.tera`, the nono and work templates if needed), and add an `[include]` of `env-customer-b.inc` to `templates/gitconfig.tera`.
-4. Select it on a machine: `env = [..., "customer-b"]` in its `miserc.local.toml`, or behind a local alias in `[env_sets]`.
+1. Create a private repo for the customer's files with an executable `setup` that links them into place (see the one of `customer-a`; it can name the customer freely).
+2. Copy `mise/config.customer-a.toml` to `mise/config.customer-b.toml` and give every secret a `CUSTOMER_B_` name, the clone path `~/.local/share/dotfiles-customer-b`. Keep this repo neutral: the real name, hosts and users only go into fnox and the private repo.
+3. Store the values: `fnox set --global CUSTOMER_B_REPO` (the private repo's ssh URL), `CUSTOMER_B_GITLAB_HOST`, `CUSTOMER_B_GIT_EMAIL`.
+4. Copy the templates the file refers to (`templates/git/customer-a.gitconfig.tera`, `templates/git/env-customer-a.inc.tera`), and add an `[include]` of `env-customer-b.inc` to `templates/gitconfig.tera`.
+5. Select it on a machine: `env = [..., "customer-b"]` in its `miserc.local.toml`, or behind a local alias in `[env_sets]`.
 
 ## Layout
 
@@ -108,9 +109,9 @@ Fonts (Comic Code, licensed) and the customer-a ssh bundle are binary: they stay
 | `home/` | plain files, linked into place by `[dotfiles]` |
 | `templates/` | Tera templates, rendered into place |
 | `externals.toml` | downloads with sha256, fetched by `mise/scripts/fetch-externals` |
-| `secrets/` | age blobs: Comic Code fonts, the customer-a ssh bundle |
+| `secrets/` | age blobs: Comic Code fonts |
 
-[Renovate](renovate.json) keeps the tools in `mise/config*.toml` and the downloads in `externals.toml` up to date; the `validate` workflow fixes the checksums on its branches. The tool versions in `templates/work/mise.toml.tera` are not covered: the file is a template, not valid TOML.
+[Renovate](renovate.json) keeps the tools in `mise/config*.toml` and the downloads in `externals.toml` up to date; the `validate` workflow fixes the checksums on its branches.
 
 ###### Licenses
 
