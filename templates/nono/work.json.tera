@@ -1,0 +1,179 @@
+{
+  "extends": [
+    "{{ secret(name="CUSTOMER_A_NONO_PROFILE_CORE") }}",
+    "codex",
+    "base"
+  ],
+  "meta": {
+    "name": "{{ secret(name="CUSTOMER_A_NONO_PROFILE_WORK") }}",
+    "version": "1.0.0",
+    "description": "Work sandbox for claude and codex",
+    "author": null
+  },
+  "security": {
+    "signal_mode": null,
+    "process_info_mode": null,
+    "ipc_mode": null,
+    "capability_elevation": null,
+    "approval_backends": {},
+    "approval_defaults": null,
+    "wsl2_proxy_policy": null
+  },
+  "groups": {
+    "include": [],
+    "exclude": []
+  },
+  "commands": {
+    "allow": [],
+    "deny": []
+  },
+  "filesystem": {
+    "allow": [
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.codex"
+    ],
+    "read": [
+      "~/.ssh/{{ secret(name="CUSTOMER_A_SSH_KEY") }}",
+      "~/.ssh/{{ secret(name="CUSTOMER_A_SSH_KEY") }}.pub",
+      "~/.aws/sso/cache",
+      "~/.aws/cli/cache",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}"
+    ],
+    "write": [],
+    "allow_file": [
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.claude/settings.json"
+    ],
+    "read_file": [
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.claude/.claude.json",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.claude/cache/changelog.md",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.claude/history.jsonl",
+      "~/.claude/plugins/marketplaces/always-further/plugins/nono",
+      "~/.claude/plugins/marketplaces/always-further/.claude-plugin/marketplace.json",
+      "~/Library/Keychains/login.keychain-db",
+      "/private/etc/resolv.conf",
+      "/private/etc/hosts",
+      "/private/etc/ssl/cert.pem",
+      "/private/etc/ssl/certs"
+    ],
+    "write_file": [],
+    "unix_socket": [],
+    "unix_socket_bind": [],
+    "unix_socket_dir": [],
+    "unix_socket_dir_bind": [],
+    "unix_socket_subtree": [],
+    "unix_socket_subtree_bind": [],
+    "deny": [
+      "~/.claude",
+      "~/.claude.json",
+      "~/.claude.json.lock",
+      "~/.claude.lock",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/mise.toml",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/kubeconfig",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/mise.local.toml",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.mise.toml",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.mise.local.toml",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/mise",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.mise",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.config/mise",
+      "~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/.config/mise.toml"
+    ],
+    "bypass_protection": [
+      "~/.ssh/{{ secret(name="CUSTOMER_A_SSH_KEY") }}",
+      "~/.ssh/{{ secret(name="CUSTOMER_A_SSH_KEY") }}.pub",
+      "~/Library/Keychains/login.keychain-db"
+    ],
+    "suppress_save_prompt": [
+      "/Users",
+      "~/",
+      "/",
+      "/arm64"
+    ]
+  },
+  "network": {
+    "block": false,
+    "allow_http2": false,
+    "allow_domain": [],
+    "deny_domain": [],
+    "credentials": [
+      "gitlab"
+    ],
+    "open_port": [
+      0
+    ],
+    "open_port_range": [],
+    "listen_port": [],
+    "listen_port_range": [
+      [
+        49152,
+        65535
+      ]
+    ],
+    "connect_port": [],
+    "no_proxy": [],
+    "custom_credentials": {
+      "gitlab": {
+        "upstream": "https://{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}",
+        "credential_key": "apple-password://{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/fahnenbruck-token",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "PRIVATE-TOKEN",
+        "credential_format": null,
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "GITLAB_TOKEN",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      }
+    },
+    "tls_intercept": null,
+    "upstream_proxy": null,
+    "upstream_bypass": []
+  },
+  "diagnostics": {
+    "suppress_system_services": [],
+    "redaction": {
+      "extra_env_vars": []
+    },
+    "network_denial_audit": {}
+  },
+  "linux": {
+    "af_unix_mediation": null,
+    "sandbox_policy": null
+  },
+  "env_credentials": {},
+  "credential_capture": {},
+  "credential_providers": {},
+  "credential_routes": [],
+  "workdir": {
+    "access": "none"
+  },
+  "hooks": {},
+  "session_hooks": {},
+  "rollback": {
+    "exclude_patterns": [],
+    "exclude_globs": []
+  },
+  "open_urls": {
+    "allow_origins": [
+      "https://auth.atlassian.com",
+      "https://{{ secret(name="CUSTOMER_A_HOST_BACKSTAGE") }}",
+      "https://claude.ai",
+      "https://{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}",
+      "https://mcp.miro.com",
+      "https://{{ secret(name="CUSTOMER_A_HOST_MONITORING_MCP") }}"
+    ],
+    "allow_localhost": false
+  },
+  "skipdirs": [],
+  "packs": [],
+  "command_args": [],
+  "unsafe_macos_seatbelt_rules": []
+}

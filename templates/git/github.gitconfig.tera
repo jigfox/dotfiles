@@ -1,0 +1,3 @@
+# vim: set ft=gitconfig :
+[user]
+  email = {{ secret(name="GIT_EMAIL_GITHUB") }}

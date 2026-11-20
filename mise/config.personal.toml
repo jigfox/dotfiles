@@ -1,0 +1,9 @@
+# Environment "personal": for a Mac used for private things.
+# Select it in ~/.config/mise/miserc.local.toml: env = ["personal", ...]
+
+[dotfiles]
+# Zen profile "private" (accent #c4a7e7)
+"~/Library/Application Support/zen/Profiles/private/user.js" = { source = "../home/zen/user.js", variants = [{ os = "macos" }] }
+"~/Library/Application Support/zen/Profiles/private/chrome/userChrome.css" = { source = "../home/zen/userChrome.css", variants = [{ os = "macos" }] }
+"~/Library/Application Support/zen/Profiles/private/chrome/userContent.css" = { source = "../home/zen/userContent.css", variants = [{ os = "macos" }] }
+"~/Library/Application Support/zen/Profiles/private/chrome/accent.css" = { source = "../home/zen/accent-private.css", variants = [{ os = "macos" }] }

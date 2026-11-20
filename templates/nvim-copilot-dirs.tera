@@ -1,0 +1,1 @@
+{{- "\n" }}~/src/{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}/

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Sync the fish plugins when fish_plugins changed (run_onchange before)
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+load_brew || true
+plugins="$HOME/.config/fish/fish_plugins"
+[ -f "$plugins" ] || exit 0
+hash="$(sha256_stdin <"$plugins")"
+if unchanged fisher-update "$hash"; then
+    exit 0
+fi
+if ! command -v fish &>/dev/null; then
+    echo "fish not found, cannot sync plugins." >&2
+    exit 1
+fi
+echo "Syncing fish plugins..."
+fish -c 'type -q fisher; or curl -fsSL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source; and fisher update' </dev/null
+record fisher-update "$hash"

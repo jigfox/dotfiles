@@ -1,5 +1,5 @@
 " Tridactyl config, loaded by every Zen profile on start
-" (needs the native messenger, see .chezmoiexternal.toml and NativeMessagingHosts/tridactyl.json)
+" (needs the native messenger, see externals.toml and the NativeMessagingHosts/tridactyl.json dotfile)
 
 " link hints (f): only show the key labels, don't recolor or outline the page
 set hintstyles.fg none

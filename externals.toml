@@ -1,0 +1,24 @@
+# Files downloaded by mise/scripts/fetch-externals (run by the bootstrap task).
+# The key is the destination, `sha256` is checked before a file is put in place,
+# `executable` and `os` ("macos") are optional.
+# Renovate bumps the version in each url, the validate workflow fixes the
+# checksums on its branches (.github/scripts/external-checksums.py).
+
+# app icons for sketchybar, font and name -> glyph map from the same release
+["~/.config/sketchybar/icon_map.sh"]
+url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.12/icon_map.sh"
+sha256 = "0924fd8630c027f644280951c87c17012a724931893dbdf6cb6a2dc96e59847e"
+os = "macos"
+
+["~/Library/Fonts/sketchybar-app-font.ttf"]
+url = "https://github.com/kvndrsslr/sketchybar-app-font/releases/download/v3.0.12/sketchybar-app-font.ttf"
+sha256 = "3461f96bcb05c0fb1c3c42abfb14f6f85a0fcbc3e1dd9a713689e29aa41a410d"
+os = "macos"
+
+# Tridactyl native messenger (lets Tridactyl in Zen read ~/.config/tridactyl/tridactylrc),
+# the version Tridactyl expects (native/current_native_version), manifest in NativeMessagingHosts
+["~/.local/share/tridactyl/native_main"]
+url = "https://github.com/tridactyl/native_messenger/releases/download/0.5.0/native_main-macOS"
+sha256 = "5382f8fcfdf41ccee561548602cf751f6c5f303c185730367c9e799085655921"
+executable = true
+os = "macos"

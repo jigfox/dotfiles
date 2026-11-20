@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://json.schemastore.org/lazygit.json
+
+gui:
+  nerdFontsVersion: "3"
+git:
+  autoFetch: false
+services:
+{%- set envs = mise_env | default(value=[]) %}
+{%- if "inovex" in envs %}
+  "{{ secret(name="INOVEX_GITLAB_HOST") }}": "gitlab:{{ secret(name="INOVEX_GITLAB_HOST") }}"
+{%- endif %}
+{%- if "customer-a" in envs %}
+  "{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}": "gitlab:{{ secret(name="CUSTOMER_A_GITLAB_HOST") }}"
+{%- endif %}

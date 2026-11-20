@@ -1,4 +1,4 @@
-// Zen profile prefs managed by chezmoi, applied on every start (shared by all profiles)
+// Zen profile prefs managed by mise, applied on every start (shared by all profiles)
 
 // load chrome/userChrome.css (duskfox theme)
 user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);

@@ -1,0 +1,3 @@
+# vim: set ft=gitconfig :
+[includeIf "gitdir:~/src/{{ secret(name="INOVEX_GITLAB_HOST") }}/"]
+  path = ~/.config/git/inovex.gitconfig

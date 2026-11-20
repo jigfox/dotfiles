@@ -1,6 +1,12 @@
-[env]
-AGE_EDIT_ID = "~/.config/age/keys.txt"
+# Project config of the dotfiles repo: the tasks you run from the checkout.
+# Not part of what is deployed (~/.config/mise is the mise/ directory).
 
-[tasks.default]
-alias = "apply"
-run = "chezmoi apply"
+[env]
+AGE_EDIT_ID = "~/.config/fnox/age.txt"
+
+[tasks.apply]
+description = "Apply the dotfiles: bootstrap with the fnox secrets in the environment"
+run = [
+  "{{ config_root }}/mise/scripts/link-fnox-config",
+  "fnox exec -- mise bootstrap",
+]

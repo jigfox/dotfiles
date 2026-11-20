@@ -1,0 +1,17 @@
+#!/bin/bash
+# pre-packages hook: nothing secret can be read without the age key, and
+# fnox, which holds every secret, finds it at ~/.config/fnox/age.txt.
+# The key lives in the Passwords app (no CLI), so it is put there by hand
+# first, see README step 1.
+set -euo pipefail
+. "$(dirname "$0")/lib.sh"
+
+if ! grep -q '^AGE-SECRET-KEY-1' "$age_key" 2>/dev/null; then
+    cat >&2 <<EOF
+$age_key is missing or holds no age secret key.
+Copy "dotfiles age key" from the Passwords app, then run:
+  mkdir -p ~/.config/fnox && (umask 077; pbpaste > ~/.config/fnox/age.txt) && pbcopy </dev/null
+(README step 1)
+EOF
+    exit 1
+fi

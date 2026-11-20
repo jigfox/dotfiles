@@ -1,0 +1,7 @@
+#!/bin/bash
+# post-repos hook: the neovim config is cloned over https (no ssh key needed),
+# pushes go over ssh
+set -euo pipefail
+dir="$HOME/.config/nvim"
+[ -d "$dir/.git" ] || exit 0
+git -C "$dir" config remote.origin.pushurl git@github.com:jigfox/neovim.git

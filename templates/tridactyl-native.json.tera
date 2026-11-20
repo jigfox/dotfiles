@@ -1,0 +1,7 @@
+{
+    "name": "tridactyl",
+    "description": "Tridactyl native command handler",
+    "path": "{{ env.HOME }}/.local/share/tridactyl/native_main",
+    "type": "stdio",
+    "allowed_extensions": [ "tridactyl.vim@cmcaine.co.uk" ]
+}
