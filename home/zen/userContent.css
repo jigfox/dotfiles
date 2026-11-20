@@ -8,8 +8,8 @@
     --default-mono-font: "Comic Code Ligatures" !important;
   }
 
+  /* not .code: the diff table has it, and the discussions inside it would inherit the font */
   pre, code, kbd, samp,
-  .code, .code *,
   .blob-content, .line_content, .diff-line-num,
   .md pre, .md code {
     font-family: "Comic Code Ligatures", monospace !important;
