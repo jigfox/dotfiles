@@ -10,7 +10,7 @@
   "prHourlyLimit": 2,
   "platformAutomerge": false,
   "mise": {
-    "managerFilePatterns": ["/(^|/)mise\\.toml$/", "/^dot_config/mise/config\\.toml$/"]
+    "managerFilePatterns": ["/(^|/)mise\\.toml$/", "/^mise/config(\\.[^/]+)?\\.toml$/"]
   },
   "packageRules": [
     {
@@ -25,16 +25,16 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
-      "description": "chezmoi externals are reviewed: the checksum commit comes from the validate workflow, which GitHub doesn't run checks for again",
+      "description": "downloads in externals.toml are reviewed: the checksum commit comes from the validate workflow, which GitHub doesn't run checks for again",
       "matchManagers": ["custom.regex"],
       "automerge": false
     }
   ],
   "customManagers": [
     {
-      "description": "GitHub release downloads pinned in .chezmoiexternal.toml, checksums are fixed by the validate workflow",
+      "description": "GitHub release downloads pinned in externals.toml, checksums are fixed by the validate workflow",
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.chezmoiexternal\\.toml$/"],
+      "managerFilePatterns": ["/^externals\\.toml$/"],
       "matchStrings": [
         "url = \"https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>[^/]+)/"
       ],
