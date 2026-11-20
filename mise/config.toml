@@ -9,6 +9,10 @@
 [settings]
 experimental = true
 
+[settings.dotfiles]
+# links relative to their location, so they do not depend on where mise runs
+relative_symlinks = true
+
 [tools]
 node = "lts"
 java = "zulu"

@@ -6,6 +6,8 @@ AGE_EDIT_ID = "~/.config/fnox/age.txt"
 
 [tasks.apply]
 description = "Apply the dotfiles: bootstrap with the fnox secrets in the environment"
+# not in the checkout: from here mise would load mise/config.toml a second time as project config
+dir = "{{ env.HOME }}"
 run = [
   "{{ config_root }}/mise/scripts/link-fnox-config",
   "fnox exec -- mise bootstrap",
