@@ -10,5 +10,6 @@ description = "Apply the dotfiles: bootstrap with the fnox secrets in the enviro
 dir = "{{ env.HOME }}"
 run = [
   "{{ config_root }}/mise/scripts/link-fnox-config",
-  "fnox exec -- mise bootstrap",
+  # lazy.nvim keeps ~/.config/nvim's lock file modified; skip such checkouts
+  "fnox exec -- mise bootstrap --skip-dirty",
 ]

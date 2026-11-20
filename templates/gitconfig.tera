@@ -80,6 +80,9 @@
   path = .config/git/github.gitconfig
 [includeIf "gitdir:~/.config/nvim/"]
   path = .config/git/github.gitconfig
+# the private repos of the customer environments (dotfiles-customer-a, ...)
+[includeIf "gitdir:~/.local/share/dotfiles-*/"]
+  path = .config/git/github.gitconfig
 # identities of the public hosts; the email of each is a fnox secret
 [includeIf "gitdir:~/src/gitlab.com/"]
   path = .config/git/gitlab.gitconfig

@@ -144,6 +144,8 @@ pre-packages = [
   "~/.config/mise/scripts/link-fnox-config",
 ]
 post-packages = "~/.config/mise/scripts/install-tap-casks"
+# ssh key and GitHub's host key before private repos are cloned over ssh
+pre-repos = "~/.config/mise/scripts/prepare-ssh"
 post-repos = "~/.config/mise/scripts/set-nvim-pushurl"
 post-dotfiles = "~/.config/mise/scripts/zen-profiles {% if mise_env is defined %}{{ mise_env | join(sep=' ') }}{% endif %}"
 post-defaults = "killall Dock || true"

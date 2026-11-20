@@ -1,6 +1,6 @@
 {
   "extends": [
-    "codex"
+    "nolabs-ai/codex"
   ],
   "meta": {
     "name": "n",

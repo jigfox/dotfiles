@@ -79,14 +79,37 @@ if [ ${#claude_servers[@]} -gt 0 ]; then
   claude_mcp=(--mcp-config "{\"mcpServers\":{$(IFS=,; echo "${claude_servers[*]}")}}")
 fi
 
-# the Colima VM's socket only exists once the enter hook's watcher has booted it
+# The Colima VM's socket only exists once the enter hook's watcher has booted
+# it, which can be after the agent starts. Granting the profile directory
+# covers a socket that appears later; it holds only this VM's docker.sock and
+# containerd.sock.
 docker_socket=()
-if [ -S "${DOCKER_HOST#unix://}" ]; then
-  docker_socket=(--allow-unix-socket "${DOCKER_HOST#unix://}")
+docker_dir=$(dirname "${DOCKER_HOST#unix://}")
+if [ -d "$docker_dir" ]; then
+  docker_socket=(--allow-unix-socket-dir "$docker_dir")
+  [ -S "${DOCKER_HOST#unix://}" ] ||
+    echo "note: ${DOCKER_HOST#unix://} not up yet, Docker works once the VM has booted" >&2
 else
-  echo "warning: ${DOCKER_HOST#unix://} not up yet, starting $agent without Docker" >&2
+  echo "warning: $docker_dir missing, starting $agent without Docker" >&2
+fi
+
+# nono logs only warnings by default, which leaves the file empty. RUST_LOG
+# raises that, scoped to nono's own target, and is dropped again inside the
+# sandbox so codex keeps its own default filter; a RUST_LOG set by the caller
+# passes through untouched
+log_dir="$HOME/.local/state/nono-agent"
+mkdir -p -m 700 "$log_dir"
+# One file per session, so the agent's hooks can read only their own warnings
+# (NONO_AGENT_LOG); sessions older than a week are rotated out on each start
+find "$log_dir" -name '*.log' -mtime +7 -delete 2>/dev/null || true
+log="$log_dir/$$.log"
+: >"$log"
+log_unset=()
+if [ -z "${RUST_LOG:-}" ]; then
+  export RUST_LOG=nono=info
+  log_unset=(-u RUST_LOG)
 fi
 
 # exec -a: the sandbox process carries the agent's name, so herdr detects it
-exec -a "$agent" nono run --profile "$profile" --allow-cwd "${writes[@]}" "${herdr_socket[@]}" "${docker_socket[@]}" "${mcp_socket[@]}" \
-  -- env -u MFA_TOKEN "${herdr_env[@]}" "$agent" "${agent_args[@]}" "$@" "${claude_mcp[@]}"
+exec -a "$agent" nono run --profile "$profile" --log-file "$log" --read-file "$log" --allow-cwd "${writes[@]}" "${herdr_socket[@]}" "${docker_socket[@]}" "${mcp_socket[@]}" \
+  -- env -u MFA_TOKEN "${log_unset[@]}" "NONO_AGENT_LOG=$log" "${herdr_env[@]}" "$agent" "${agent_args[@]}" "$@" "${claude_mcp[@]}"

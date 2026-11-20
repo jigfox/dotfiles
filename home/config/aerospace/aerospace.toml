@@ -38,7 +38,7 @@ default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 on-focus-changed = [
     'move-mouse window-lazy-center',
-    # update the window list in sketchybar, see ~/.config/sketchybar/plugins/aerospace.sh
+    # update the window list in sketchybar, see ~/.config/sketchybar/plugins/windows.sh
     'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change',
 ]
 
