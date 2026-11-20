@@ -24,6 +24,8 @@ fd = "10.5.2"
 fzf = "0.75.0"
 herdr = "0.9.5"
 jq = "1.8.2"
+# kubectl finds the plugin only as kubectl-krew
+"github:kubernetes-sigs/krew" = { version = "0.5.0", bin = "kubectl-krew" }
 lazygit = "0.66.3"
 neovim = "0.12.6"
 ripgrep = "15.2.0"
@@ -69,8 +71,6 @@ GIT_EMAIL_HOMELAB = "GIT_EMAIL_HOMELAB"
 "brew:git-lfs" = "latest"
 # no macOS binaries for mise
 "brew:eza" = "latest"
-# installs the kubectl-krew plugin name kubectl looks for, mise only `krew`
-"brew:krew" = "latest"
 "brew:moreutils" = "latest"
 "brew:sshpass" = "latest"
 "brew:switchaudio-osx" = "latest"
