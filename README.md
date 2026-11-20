@@ -1,40 +1,127 @@
 # My dotfiles
 
-This will setup a new computer with my preferred configuration. It is using [chezmoi][chezmoi] for dotfile management. To install tools and apps which are always used in the latest version [Homebrew][brew] is used. For tools which are required in multiple versions depending on project [mise-en-place][mise] will be used.
+This will setup a new computer with my preferred configuration with [`mise bootstrap`][bootstrap] ([mise-en-place][mise]): Homebrew packages and apps, macOS settings, dotfiles, the login shell and the tools that are required in multiple versions depending on project. Secrets live in [fnox][fnox], encrypted with [age][age] in this (public) repository.
 
-A list of things installed with `brew` can be found in the [Brewfile][brewfile].
+## Environments
 
-`chezmoi init` asks whether the machine is used for *work* and/or *personal* stuff. Both can be true; templates check `.work` and `.personal`. Change the answers later in the `[data]` section via `chezmoi edit-config`.
+What a machine gets depends on the *environments* it selects. [mise/config.toml](./mise/config.toml) is the base every machine has, each environment adds `mise/config.<name>.toml` on top:
 
-A list of tools with default version installed with `mise` can found in [mise/config.toml][miseconfig].
+| environment | adds |
+| --- | --- |
+| `personal` | the Zen profile `private` |
+| `inovex` | the company git identity, Slack, the Zen profile `inovex` |
+| `customer-a` | everything for one customer: git identity, work sandbox and `mise.toml`, ssh keys, openconnect, the Zen profile `customer` |
+
+A machine can select several. The selection is per machine, in `~/.config/mise/miserc.local.toml`, which is not in git. Each environment file declares the fnox secrets it needs under `[bootstrap.secrets]`, so a machine without `customer-a` never reads the customer's data.
+
+Neutral names (`customer-a`) are what is public. The real customer is only in the encrypted values, and a machine can give it a local alias (see step 2).
 
 ## Setup
 
-Secrets are encrypted with [age][age]. The key lives in the Passwords app as `chezmoi age key` (synced via iCloud). Setup asks for it once: copy it from Passwords when prompted.
+The age key has to come first, because nothing secret can be decrypted without it. The order matters.
 
-The built-in git is used for the first clone, so no Xcode command line tools are needed up front; Homebrew installs them afterwards.
+1. **Get the age key.** Open the Passwords app, find the entry `dotfiles age key` and copy it. Then:
 
-```sh
-sh -c "$(curl -fsLs https://raw.githubusercontent.com/jigfox/dotfiles/refs/heads/main/scripts/chezmoi.sh)" -- init --apply --use-builtin-git true jigfox
-```
+   ```sh
+   mkdir -p ~/.config/fnox && (umask 077; pbpaste > ~/.config/fnox/age.txt) && pbcopy </dev/null
+   ```
+
+   It is the key of the recipient `age1zf8cfg0hrzz6k3hfp3jeuttud8sak8hk5qdruhaw3m9alem93scqs2c0pj` in [home/config/fnox/config.toml](./home/config/fnox/config.toml).
+
+2. **Pick the environments of this Mac**, for example `personal,inovex,customer-a` (`personal` alone is enough for a private Mac). They are passed to the first pass in step 4 with `-E`, which saves them to `miserc.local.toml`. Do not create `~/.config/mise` yourself: step 4 links it to the checkout and refuses a directory that already holds a config.
+
+   To give an environment a local name, edit the saved `~/.config/mise/miserc.local.toml` after step 4 (it lives in the checkout and is git-ignored):
+
+   ```toml
+   env = ["personal", "inovex", "acme"]
+
+   [env_sets]
+   acme = ["customer-a"]
+   ```
+
+   An alias only works through `env =`, not `-E`.
+
+3. **Install mise.**
+
+   ```sh
+   curl https://mise.run | sh
+   ```
+
+4. **First pass, without secrets.** The checkout is cloned over https, so no Xcode command line tools are needed up front. This installs Homebrew, the packages (fnox included), the tools, the macOS settings and the login shell, links `~/.config/mise` to `mise/` of the checkout (`~/.local/share/mise/bootstrap-repo`) and fnox's config to `~/.config/fnox/config.toml`:
+
+   ```sh
+   ~/.local/bin/mise -E personal,inovex,customer-a bootstrap --from https://github.com/jigfox/dotfiles.git --config-dir mise --skip dotfiles --save-env
+   ```
+
+5. **Second pass, with secrets.** This deploys the dotfiles, including the templates and the files fnox holds (ssh keys), then runs the setup steps (downloads, fonts, fish plugins, Zen profiles):
+
+   ```sh
+   cd ~/.local/share/mise/bootstrap-repo && mise trust && mise run apply
+   ```
+
+   `mise run apply` is `fnox exec -- mise bootstrap`. Afterwards switch the remote of the checkout to ssh: `git remote set-url origin git@github.com:jigfox/dotfiles.git`.
 
 After setup:
 
 - macOS asks for Accessibility permission for AeroSpace.
 - App Store apps install only if this Apple ID has downloaded them before.
 - Reinstall the herdr `claude-session-title` plugin.
+- Open a new shell, the login shell changed to fish.
+
+## Day to day
+
+```sh
+cd ~/.local/share/mise/bootstrap-repo
+mise run apply                                  # apply everything
+fnox exec -- mise bootstrap --dry-run           # preview
+fnox exec -- mise bootstrap secrets status      # are all secrets there?
+fnox exec -- mise bootstrap --only dotfiles     # just the dotfiles
+```
+
+Dotfiles are links into the checkout (`home/`) or, where a value is secret or per machine, rendered [Tera][tera] templates (`templates/`). `mise bootstrap` runs its hooks and the `bootstrap` task on every run, so every script in `mise/scripts` is a no-op when nothing changed: it keeps the hash of its input in `~/.local/state/dotfiles/` (what chezmoi's `run_onchange` did).
+
+### Secrets
+
+All secrets are in [home/config/fnox/config.toml](./home/config/fnox/config.toml), age-encrypted. fnox accepts `[files]` only in its global config, so this file is linked to `~/.config/fnox/config.toml`; then, with the age key in place:
+
+```sh
+fnox set --global NAME                    # a text secret (prompts for the value)
+fnox set --global --file ~/.ssh/config    # a file, deployed by a `mode = "fnox"` dotfile
+fnox get NAME
+```
+
+Fonts (Comic Code, licensed) and the customer-a ssh bundle are binary: they stay `.age` files in `secrets/`, encrypted to the same recipient (`age -e -a -r <recipient>`), and bootstrap steps decrypt them.
+
+### Adding a customer
+
+1. Copy `mise/config.customer-a.toml` to `mise/config.customer-b.toml` and give every secret a `CUSTOMER_B_` name. Keep the repo neutral: the real name, hosts and users only go into fnox.
+2. Store the values: `fnox set --global CUSTOMER_B_GITLAB_HOST` and so on, including `CUSTOMER_B_GIT_EMAIL`.
+3. Copy the templates the file refers to (`templates/git/customer-a.gitconfig.tera`, `templates/git/env-customer-a.inc.tera`, the nono and work templates if needed), and add an `[include]` of `env-customer-b.inc` to `templates/gitconfig.tera`.
+4. Select it on a machine: `env = [..., "customer-b"]` in its `miserc.local.toml`, or behind a local alias in `[env_sets]`.
+
+## Layout
+
+| path | what |
+| --- | --- |
+| `mise.toml` | tasks of this checkout (`apply`), not deployed |
+| `mise/` | becomes `~/.config/mise`: `config.toml` (base), `config.<env>.toml`, `scripts/` |
+| `home/` | plain files, linked into place by `[dotfiles]` |
+| `templates/` | Tera templates, rendered into place |
+| `externals.toml` | downloads with sha256, fetched by `mise/scripts/fetch-externals` |
+| `secrets/` | age blobs: Comic Code fonts, the customer-a ssh bundle |
+
+[Renovate](renovate.json) keeps the tools in `mise/config*.toml` and the downloads in `externals.toml` up to date; the `validate` workflow fixes the checksums on its branches. The tool versions in `templates/work/mise.toml.tera` are not covered: the file is a template, not valid TOML.
 
 ###### Licenses
 
-[MIT][mit] for everything except the files under [private_Library/private_Fonts](./private_Library/private_Fonts).
+[MIT][mit] for everything except the files under [secrets/fonts](./secrets/fonts).
 
-The encrypted font files in `private_Library/private_Fonts` are [Comic Code][comic] by Toshi Omagari and they need to be purchased to be used, this is why they are encrypted.
+The encrypted font files in `secrets/fonts` are [Comic Code][comic] by Toshi Omagari and they need to be purchased to be used, this is why they are encrypted.
 
 [comic]: https://tosche.net/fonts/comic-code
 [age]: https://age-encryption.org
+[fnox]: https://fnox.jdx.dev
 [mit]: ./LICENSE
-[chezmoi]: https://chezmoi.io/
-[brew]: https://brew.sh
 [mise]: https://mise.jdx.dev
-[brewfile]: ./dot_config/brew/Brewfile.tmpl
-[miseconfig]: ./dot_config/mise/config.toml
+[bootstrap]: https://mise.jdx.dev/bootstrap.html
+[tera]: https://mise.jdx.dev/templates.html
