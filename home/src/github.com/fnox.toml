@@ -1,0 +1,9 @@
+# fnox config of ~/src/github.com (linked there), exported by the enter hook of
+# ~/.config/work/mise.toml. Same age recipient as home/config/fnox/config.toml.
+default_provider = "age"
+
+[providers.age]
+type = "age"
+recipients = ["age1zf8cfg0hrzz6k3hfp3jeuttud8sak8hk5qdruhaw3m9alem93scqs2c0pj"]
+
+[secrets]

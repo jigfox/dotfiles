@@ -1,0 +1,9 @@
+# Overrides ~/.config/work/mise.toml for ~/src/github.com (personal projects).
+[tools]
+opencode = "latest"
+
+[env]
+OPENCODE_CONFIG = "opencode.jsonc"
+# ANTHROPIC_API_KEY comes from fnox.toml (fnox activate in the enter hook);
+# the nono profile hands it to the agent
+AGENT_NONO_PROFILE = "github"

@@ -228,6 +228,11 @@ run = [
 "~/.config/work/bin/codex" = { source = "scripts/agent" }
 "~/.config/work/bin/opencode" = { source = "scripts/agent" }
 
+# ~/src/github.com is a sandboxed agent root too (opencode, API key in its fnox.toml)
+"~/src/github.com/mise.toml" = { source = "../home/config/work/mise.toml" }
+"~/src/github.com/mise.local.toml" = { source = "../home/src/github.com/mise.local.toml" }
+"~/src/github.com/fnox.toml" = { source = "../home/src/github.com/fnox.toml" }
+
 "~/.default-npm-packages" = { source = "../home/default-npm-packages" }
 "~/.editorconfig" = { source = "../home/editorconfig" }
 
