@@ -24,22 +24,22 @@ detect_env_vars = ['KUBECONFIG']
 # runs `mise doctor` (~0.3 s) on every prompt; `mise doctor` by hand instead
 disabled = true
 
+# contexts named <cluster>-<stage> show only the stage, coloured by risk
 [[kubernetes.contexts]]
-context_pattern = "^cluster-prod$"
-context_alias = "prod"
+context_pattern = ".+-(?P<stage>prod)$"
+context_alias = "$stage"
 style = "red"
 
 [[kubernetes.contexts]]
-context_pattern = "^cluster-dev$"
-context_alias = "dev"
-style = "green"
-
-[[kubernetes.contexts]]
-context_pattern = "^cluster-preprod$"
-context_alias = "preprod"
+context_pattern = ".+-(?P<stage>preprod)$"
+context_alias = "$stage"
 style = "yellow"
 
-[aws.profile_aliases]
-aws-account-preprod = 'preprod'
-aws-account-prod = 'prod'
-aws-account-dev = 'dev'
+[[kubernetes.contexts]]
+context_pattern = ".+-(?P<stage>dev)$"
+context_alias = "$stage"
+style = "green"
+
+# AWS profile aliases are per customer: an environment's private repo renders
+# this file plus its [aws.profile_aliases] into its root and points
+# STARSHIP_CONFIG there (see the customer-a setup)
