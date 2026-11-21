@@ -216,9 +216,17 @@ run = [
 "~/.config/nono/profiles/n.json" = { mode = "track", encrypt = true }
 "~/.config/nono/profiles/opencode.json" = { mode = "track", encrypt = true }
 "~/.config/nono/profiles/opencode-ant.json" = { mode = "track", encrypt = true }
+"~/.config/nono/profiles/agent-claude-core.json" = { mode = "track", encrypt = true }
+"~/.config/nono/profiles/github.json" = { mode = "track", encrypt = true }
 "~/.config/nono/work/work.json" = { mode = "track", encrypt = true, variants = [{ profile = "customer-a" }] }
-"~/.config/nono/work/work-claude-core.json" = { mode = "track", encrypt = true, variants = [{ profile = "customer-a" }] }
 "~/.config/nono/profiles/base.json" = { source = "../templates/nono/base.json.tera", mode = "template" }
+
+# sandboxed agent roots (README, "Sandboxed agents"): the generic root config,
+# the wrappers that run claude, codex and opencode in nono, and ~/src/github.com
+"~/.config/work/mise.toml" = { source = "../home/config/work/mise.toml" }
+"~/.config/work/bin/claude" = { source = "scripts/agent" }
+"~/.config/work/bin/codex" = { source = "scripts/agent" }
+"~/.config/work/bin/opencode" = { source = "scripts/agent" }
 
 "~/.default-npm-packages" = { source = "../home/default-npm-packages" }
 "~/.editorconfig" = { source = "../home/editorconfig" }

@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Runs claude, codex or opencode in a nono sandbox, whichever name this was
+# called as. ~/.config/work/bin (links to this script) is first in PATH under
+# every sandboxed root (~/.config/work/mise.toml), so tools that exec `claude`
+# themselves get the sandbox too, not only commands typed at the prompt.
+#
+# What differs per root comes from its mise.local.toml:
+#   AGENT_NONO_PROFILE   nono profile to run in (required)
+#   AGENT_MCP            MCP servers that run outside the sandbox, one
+#                        `name=command` per line (optional)
+#   AGENT_IGNORED_CONFIG mise config files the sandboxed agent must not load,
+#                        passed on as MISE_IGNORED_CONFIG_PATHS (optional)
+set -eo pipefail
+
+name=$(basename "$0")
+self=$(cd "$(dirname "$0")" && pwd -P)
+
+: "${AGENT_NONO_PROFILE:?AGENT_NONO_PROFILE is not set: run the agent under a root whose mise.local.toml sets it}"
+[ -z "${AGENT_IGNORED_CONFIG:-}" ] || export MISE_IGNORED_CONFIG_PATHS="$AGENT_IGNORED_CONFIG"
+
+# Drop this directory from PATH, so the lookup below and nono-agent's own
+# `$agent` inside the sandbox find the real binary instead of this wrapper
+path=
+IFS=: read -ra entries <<<"$PATH"
+for entry in "${entries[@]}"; do
+  [ "$(cd "$entry" 2>/dev/null && pwd -P)" = "$self" ] && continue
+  path="${path:+$path:}$entry"
+done
+export PATH="$path"
+
+command -v "$name" >/dev/null || {
+  echo "error: no $name in PATH besides $self" >&2
+  exit 1
+}
+
+# the directories each agent writes to, which the root keeps under itself
+flags=()
+add_write() { [ -z "${!1:-}" ] || flags+=(--write "${!1}"); }
+case "$name" in
+claude) add_write GRADLE_USER_HOME; add_write CLAUDE_CONFIG_DIR ;;
+codex) add_write GRADLE_USER_HOME; add_write CODEX_HOME ;;
+opencode) add_write GRADLE_USER_HOME ;; # its own dirs are granted by the nono profile
+*)
+  echo "error: no sandbox setup for $name" >&2
+  exit 1
+  ;;
+esac
+
+while IFS= read -r entry; do
+  [ -n "$entry" ] || continue
+  case "$entry" in
+  *=*) flags+=(--mcp "${entry%%=*}" "${entry#*=}") ;;
+  *) echo "error: AGENT_MCP entry without '=': $entry" >&2; exit 1 ;;
+  esac
+done <<<"${AGENT_MCP:-}"
+
+exec "$HOME/.config/mise/scripts/nono-agent" "$AGENT_NONO_PROFILE" "$name" "${flags[@]}" -- "$@"

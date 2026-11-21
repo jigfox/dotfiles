@@ -109,9 +109,23 @@ mise dot rollback <file> --to <checkpoint>
 mise dot track <file> --encrypt # then move the entry it adds into mise/config.toml
 ```
 
+### Sandboxed agents
+
+`claude`, `codex` and `opencode` run in a [nono](https://github.com/always-further/nono) sandbox under the roots `~/src/<host>/` that have one. A root is a directory whose `mise.toml` is a link to the generic [home/config/work/mise.toml](./home/config/work/mise.toml) (also deployed to `~/.config/work/mise.toml`): it keeps everything the agents and tools write (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `GRADLE_USER_HOME`, kubeconfig, AWS, npm, ...) in the root, starts a Colima VM per root for Docker (`mise/scripts/colima-agent`, via the enter and leave hooks) and puts `~/.config/work/bin` first in PATH. There `claude`, `codex` and `opencode` are links to [mise/scripts/agent](./mise/scripts/agent), so tools that exec an agent get the sandbox too. The script takes the rest from the root's `mise.local.toml` (a link as well, it overrides `mise.toml`):
+
+| variable | meaning |
+| --- | --- |
+| `AGENT_NONO_PROFILE` | nono profile to run in, required |
+| `AGENT_MCP` | MCP servers that run outside the sandbox, one `name=command` per line, optional |
+| `AGENT_IGNORED_CONFIG` | mise configs the agent must not load, becomes `MISE_IGNORED_CONFIG_PATHS`, optional |
+
+Secrets of a root go in a `fnox.toml` next to it (the enter hook runs `fnox activate`). A credential the agent needs is handed over by the nono profile (`env_credentials`, e.g. `"env://ANTHROPIC_API_KEY": "ANTHROPIC_API_KEY"`), not by the script. The profiles are tracked files: `agent-claude-core` is the base of all of them, `github` is the one of `~/src/github.com`.
+
+To add a root: link the generic `mise.toml` and a `mise.local.toml` with at least `AGENT_NONO_PROFILE` into it (a `[dotfiles]` entry here, or the `setup` of a private repo), and track a nono profile of that name (extend `agent-claude-core`, grant the root's path).
+
 ### Adding a customer
 
-1. Create a private repo for the customer's files with an executable `setup` that links them into place (see the one of `customer-a`; it can name the customer freely).
+1. Create a private repo for the customer's files with an executable `setup` that links them into place (see the one of `customer-a`; it can name the customer freely). For a sandboxed root (see above) it links the generic `~/.config/work/mise.toml` as `<root>/mise.toml` and the customer's part as `<root>/mise.local.toml` (tools, hosts, `AGENT_*`).
 2. Copy `mise/config.customer-a.toml` to `mise/config.customer-b.toml` and give every secret a `CUSTOMER_B_` name, the clone path `~/.local/share/dotfiles-customer-b`. Keep this repo neutral: the real name, hosts and users only go into fnox and the private repo.
 3. Store the values: `fnox set --global CUSTOMER_B_REPO` (the private repo's ssh URL), `CUSTOMER_B_GITLAB_HOST`, `CUSTOMER_B_GIT_EMAIL`.
 4. Copy the templates the file refers to (`templates/git/customer-a.gitconfig.tera`, `templates/git/env-customer-a.inc.tera`), and add an `[include]` of `env-customer-b.inc` to `templates/gitconfig.tera`.
@@ -123,7 +137,7 @@ mise dot track <file> --encrypt # then move the entry it adds into mise/config.t
 | --- | --- |
 | `mise.toml` | tasks of this checkout (`apply`), not deployed |
 | `mise/` | becomes `~/.config/mise`: `config.toml` (base), `config.<env>.toml`, `scripts/` |
-| `home/` | plain files, linked into place by `[dotfiles]` |
+| `home/` | plain files, linked into place by `[dotfiles]` (`home/config/work` the generic agent root, `home/src` files of `~/src/...` roots) |
 | `templates/` | Tera templates, rendered into place |
 | `externals.toml` | downloads with sha256, fetched by `mise/scripts/fetch-externals` |
 | `secrets/` | age blobs: Comic Code fonts |

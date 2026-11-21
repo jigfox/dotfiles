@@ -1,0 +1,38 @@
+# Config of every sandboxed agent root (~/src/<host>/...), deployed to
+# ~/.config/work/mise.toml and linked as <root>/mise.toml. What differs per
+# root is in its mise.local.toml, which overrides this file: at least
+# AGENT_NONO_PROFILE, see README ("Sandboxed agents").
+#
+# Both are links, so mise takes {{config_root}} from the link's location: the
+# root itself, and everything an agent or tool writes stays under it.
+[env]
+MISE_EXPERIMENTAL = 1
+KUBECONFIG = { value = "{{config_root}}/kubeconfig" }
+KAFKA_CTL_CONFIG = { value = "{{config_root}}/kafkactl.yml" }
+AWS_CONFIG_FILE = { value = "{{config_root}}/.aws/config" }
+AWS_SHARED_CREDENTIALS_FILE = { value = "{{config_root}}/.aws/credentials" }
+NPM_CONFIG_USERCONFIG = { value = "{{config_root}}/.npmrc" }
+NPM_CONFIG_CACHE = { value = "{{config_root}}/.cache/npm" }
+GLAB_CONFIG_DIR = { value = "{{config_root}}/.glab-cli" }
+CLAUDE_CONFIG_DIR = { value = "{{config_root}}/.claude" }
+CODEX_HOME = { value = "{{config_root}}/.codex" }
+GRADLE_USER_HOME = { value = "{{config_root}}/.gradle" }
+DOCKER_CONFIG = { value = "{{config_root}}/.docker" }
+TF_PLUGIN_CACHE_DIR = "{{config_root}}/.cache/tofu-plugins"
+# the Colima VM that ~/.config/mise/scripts/colima-agent starts for this root
+DOCKER_HOST = { value = "unix://{{env.HOME}}/.config/colima/agent-{{config_root | basename | replace(from='.', to='-')}}/docker.sock" }
+TESTCONTAINERS_RYUK_DISABLED = true
+# claude, codex and opencode there run in nono (mise/scripts/agent), also when
+# a tool execs them
+_.path = ["{{env.HOME}}/.config/work/bin"]
+
+[hooks.enter]
+shell = "fish"
+script = '''
+fnox activate fish | source
+~/.config/mise/scripts/colima-agent enter {{config_root}} $fish_pid
+'''
+
+[hooks.leave]
+shell = "fish"
+script = "~/.config/mise/scripts/colima-agent leave {{config_root}} $fish_pid"
