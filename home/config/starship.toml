@@ -21,7 +21,8 @@ disabled = false
 detect_env_vars = ['KUBECONFIG']
 
 [mise]
-disabled = false
+# runs `mise doctor` (~0.3 s) on every prompt; `mise doctor` by hand instead
+disabled = true
 
 [[kubernetes.contexts]]
 context_pattern = "^cluster-prod$"
