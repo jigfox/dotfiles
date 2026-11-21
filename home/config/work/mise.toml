@@ -29,7 +29,8 @@ _.path = ["{{env.HOME}}/.config/work/bin"]
 [hooks.enter]
 shell = "fish"
 script = '''
-fnox activate fish | source
+# Homebrew's fnox: a stale mise shim of it comes first in non-interactive shells
+$HOMEBREW_PREFIX/bin/fnox activate fish | source
 ~/.config/mise/scripts/colima-agent enter {{config_root}} $fish_pid
 '''
 
