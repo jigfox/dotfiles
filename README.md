@@ -61,6 +61,12 @@ The age key has to come first, because nothing secret can be decrypted without i
 
    `mise run apply` is `fnox exec -- mise bootstrap --skip-dirty` (a checkout with local changes, like neovim's lock file, is left alone). Afterwards switch the remote of the checkout to ssh: `git remote set-url origin git@github.com:jigfox/dotfiles.git`.
 
+6. **Restore the tracked files** (the nono profiles, see [Tracked files](#tracked-files)) from their private history repo:
+
+   ```sh
+   mise bootstrap --adopt git@github.com:jigfox/dotfiles-history.git
+   ```
+
 After setup:
 
 - macOS asks for Accessibility permission for AeroSpace.
@@ -91,6 +97,17 @@ fnox get NAME
 ```
 
 Fonts (Comic Code, licensed) are binary: they stay `.age` files in `secrets/`, encrypted to the same recipient (`age -e -a -r <recipient>`), and bootstrap steps decrypt them.
+
+### Tracked files
+
+Files that their app rewrites (the nono profiles: a rewrite replaced the link with a real file) are not in this repo but `mode = "track"` entries: they stay plain files in place, and the watcher service `mise-history` (a LaunchAgent) saves every change to a local git history and syncs it with the private repo [jigfox/dotfiles-history](https://github.com/jigfox/dotfiles-history). They are encrypted to the fnox recipient (`settings.age.key_file` points mise at the fnox key), so customer profiles can live there too, as variants of their environment.
+
+```sh
+mise dot status                 # watcher, last push and pull
+mise dot history --path <file>  # saved versions
+mise dot rollback <file> --to <checkpoint>
+mise dot track <file> --encrypt # then move the entry it adds into mise/config.toml
+```
 
 ### Adding a customer
 

@@ -13,6 +13,10 @@ experimental = true
 # links relative to their location, so they do not depend on where mise runs
 relative_symlinks = true
 
+[settings.age]
+# decrypts the encrypted tracked files; the same key as fnox's
+key_file = "~/.config/fnox/age.txt"
+
 [tools]
 node = "lts"
 java = "zulu"
@@ -135,6 +139,20 @@ login_shell = "fish"
 # config.fish because it is a link into home/config/fish. The same activation
 # (prompt: activate, scripts: shims) is home/config/fish/conf.d/10-mise.fish.
 
+# --- tracked files history ----------------------------------------------------
+
+# Files with mode = "track" are saved to a local git history on every change
+# (the watcher service) and synced with this private repo, never with this
+# public one. Encrypted entries use the fnox age key (settings.age.key_file).
+[history.origin]
+url = "git@github.com:jigfox/dotfiles-history.git"
+
+[history.encryption]
+recipients = ["age1zf8cfg0hrzz6k3hfp3jeuttud8sak8hk5qdruhaw3m9alem93scqs2c0pj"]
+
+[bootstrap.services.mise-history]
+builtin = "history-watch"
+
 # --- hooks and bootstrap task -------------------------------------------------
 
 # Hooks and the task run on every `mise bootstrap`; the scripts (mise/scripts)
@@ -190,10 +208,16 @@ run = [
 "~/.config/starship.toml" = { source = "../home/config/starship.toml" }
 "~/.config/lazygit/config.yml" = { source = "../templates/lazygit.yml.tera", mode = "template" }
 
-# profiles of the work sandbox are linked next to these by the environments
-"~/.config/nono/profiles/n.json" = { source = "../home/config/nono/profiles/n.json" }
-"~/.config/nono/profiles/opencode.json" = { source = "../home/config/nono/profiles/opencode.json" }
-"~/.config/nono/profiles/opencode-ant.json" = { source = "../home/config/nono/profiles/opencode-ant.json" }
+# nono rewrites its profiles, which replaced links with real files: they are
+# tracked in place and autosaved to the history origin (see [history] below).
+# Encrypted, because profiles name credentials (the history push refuses
+# plaintext that looks like a secret). Track entries are only read from this
+# global file, so the customer's are variants of its environment.
+"~/.config/nono/profiles/n.json" = { mode = "track", encrypt = true }
+"~/.config/nono/profiles/opencode.json" = { mode = "track", encrypt = true }
+"~/.config/nono/profiles/opencode-ant.json" = { mode = "track", encrypt = true }
+"~/.config/nono/work/work.json" = { mode = "track", encrypt = true, variants = [{ profile = "customer-a" }] }
+"~/.config/nono/work/work-claude-core.json" = { mode = "track", encrypt = true, variants = [{ profile = "customer-a" }] }
 "~/.config/nono/profiles/base.json" = { source = "../templates/nono/base.json.tera", mode = "template" }
 
 "~/.default-npm-packages" = { source = "../home/default-npm-packages" }
