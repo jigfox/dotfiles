@@ -8,6 +8,10 @@
 
 [settings]
 experimental = true
+# trust is tied to a config's contents, and nothing is trusted automatically:
+# sandboxed agents may edit a repo's mise.toml, which must not take effect in
+# the unsandboxed shell until it is trusted again (`mise trust`)
+paranoid = true
 
 [settings.dotfiles]
 # links relative to their location, so they do not depend on where mise runs
