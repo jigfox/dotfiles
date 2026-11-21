@@ -95,8 +95,10 @@ GIT_EMAIL_HOMELAB = "GIT_EMAIL_HOMELAB"
 
 # --- macOS --------------------------------------------------------------------
 
-# Mission Control: don't rearrange spaces based on most recent use
+# auto-hide the Dock (sketchybar and aerospace replace it); Mission Control:
+# don't rearrange spaces based on most recent use
 [bootstrap.settings.macos.dock]
+autohide = true
 mru_spaces = false
 
 # auto-hide the menu bar, sketchybar takes its place
